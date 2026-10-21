@@ -1,0 +1,574 @@
+---
+title: "kernelopt: Certified Rewrite Play for Kernel Schedules\\newline A Learned Game from Verified Fusions to a Chunked-Scan Schedule"
+subtitle: "Draft — proposed, not accepted.  PRIVATE — repo-internal numbers."
+author:
+  - name: "mlopt project"
+    affiliation: "handl-lang / kernelopt"
+date: "2026-10-21"
+abstract: |
+  Kernel work is the last hand-written mile of a compiled tensor
+  program: which regions fuse, which elementary ops strength-reduce,
+  which loops batch into a schedule.  We describe kernelopt, the
+  codegen domain of the mlopt rewrite game — the *same* game layer
+  that plays law discovery, seated on a board whose moves are
+  codegen laws.  The bank is twenty-six laws: nineteen folds of
+  spelled op-compositions into named fused-kernel ops, a family
+  folding concat-of-chunks spellings into a scheduled scan marker,
+  and two arithmetic strength reductions.  The referee is
+  three-legged — a derivation certificate on the terminal
+  extraction, verify-first numeric equality in the sink's own
+  runtime, and measured wall time against a hand-Triton field
+  baseline.  Measured on the repo's bench: verified-equal fused
+  composites at 1.1–5.0× over their spelled programs, at-or-near the
+  hand-Triton rows on single fusions, with the honest negatives kept
+  (two matmul-epilogue folds at parity/loss; the decayed-matmul fold
+  that verifies, prices 1 launch, and never pays).  A trained linear
+  player beats the scripted playbook on held-out boards (0.560 vs
+  0.200 reward/episode).  The headline: on the extracted
+  retnet-class carrier — a 145-node program the sink previously
+  could not lower at all — a learned schedule fold emits a fused
+  chunked-scan plan measuring **0.271 ms**, at or below the ~0.28 ms
+  FLA reference (a carried retro number) where the incumbent
+  delivery path measures 0.454 ms.  The scope is honest: the
+  schedule win is realised under CUDA-graph replay — the eager
+  scheduled path is Python-bound — and the FLA comparison is parity
+  on a launch-bound term, not a GEMM-bound one.
+format:
+  pdf:
+    documentclass: article
+    geometry: margin=2.4cm
+    fontsize: 11pt
+    number-sections: true
+    colorlinks: true
+    linkcolor: black
+    urlcolor: blue
+    citecolor: black
+bibliography: references.bib
+---
+
+::: {.callout-important}
+**Status.**  This is a working draft — *proposed, not accepted*.  It
+has not had human revision or external review.  This repository is
+**private**: the numbers below are repo-internal and this file must
+not be copied into public trees.  Every quantitative claim names the
+audit doc, bench module, or note that produced it.
+:::
+
+# Introduction
+
+Autotuning is already a game — it is simply played by hand.  A kernel
+engineer looks at a spelled program, chooses fusions and strength
+reductions, picks a schedule, compiles, measures, and iterates; the
+moves are well-formed, the referee is the numeric check, and the score
+is wall time.  What the incumbent toolchains automate is the *scoring*
+(a cost model over a template space); the *move set* stays whatever a
+human wrote into the compiler.
+
+The mlopt substrate [@mlopt-platform] supplies the rest of the game as
+machinery: a term IR and an e-graph that closes a program under a law
+bank, a certificate that replays a derivation step-by-step, a `Sink`
+port that lowers an extracted program into a backend and verifies it,
+and a game layer — the `Board` protocol, the episode/train/eval
+drivers, and the player registry — that already plays law discovery
+on the same primitives [@mlopt-graphopt].  kernelopt is the domain
+package that seats codegen on that layer: one spelled program, a law
+bank of codegen rewrites as the move set, a launch-dominated cost
+model as the score, and a kernel sink as the world the moves land in.
+Nothing in the engine or game layer is kernel-specific — a second
+domain, not a second system (`notes/kernel-engineer-board.md`).
+
+The claim is narrow, measured, and reproducible from the committed
+tree:
+
+> A schedule a kernel engineer writes — the pairwise-batched chunked
+> scan over a concat-of-chunks spelling — was **reached by rewrite
+> play on the extracted program, certified by derivation replay and
+> verify-first numeric equality, and measured at or below the
+> hand-written FLA reference implementation**, on a carrier the
+> codegen domain could not even lower one arm earlier.
+
+Two subsidiary claims carry it: every fused op the bank mints is
+numerically equal to its spelled site on the sink's own runtime
+(verify-first — a fused kernel ships on measurement, never on the
+law's say-so), and a learned prior plays the board better than the
+scripted line (0.560 vs 0.200 mean reward per episode, 24 held-out
+cases, bit-identical reproduction under the leaderboard protocol;
+`docs/results_kernel_check.md`).
+
+The honest boundaries are named up front and expanded in
+@sec-limitations: the schedule win is realised under CUDA-graph
+replay (the eager scheduled path is Python-bound), the FLA number is
+a carried retro from the parent repo (`fla-core` is absent here),
+the comparison is parity on a launch-bound term rather than a win in
+the GEMM-bound regime, and one fusion family — the decayed matmul —
+verifies and prices but never pays at any measured size.
+
+The repository is `handl-lang/kernelopt` (private); every number
+below cites the artifact that produced it (@sec-repro).
+
+# The substrate, briefly {#sec-substrate}
+
+The platform paper carries this section [@mlopt-platform]; the short
+version a reader needs here: a program is a term over a typed op
+vocabulary; equality saturation [@tate2009; @willsey2021egg] closes
+it under a law bank — rewrite rules as *data* (an LHS/RHS pattern
+pair plus guard hooks or a declarative `cond`/`dspec` spec) — and
+extraction picks the cheapest member under a pluggable cost model.
+A `Sink` port lowers the extraction into a backend and verifies the
+lowered pair.  The `Board` protocol wraps that loop as an episode —
+`observe`/`step`, actions are rule names, reward is cost improvement —
+and `play` is a domain registry: a domain is data (a case generator,
+a board factory, a feature spec, an optional `deliver` hook), not a
+subclass.  What this paper adds is *domain data only*: the codegen
+law bank (`mlopt_kernel.laws`), the launch-counted cost model
+(`mlopt_kernel.cost`), the kernel sink and scheduled executor
+(`mlopt_kernel.sink`, `mlopt_kernel.scan`), the board
+(`mlopt_kernel.board`), the `kernel` domain plugin
+(`mlopt_kernel.play`), and a baked prior
+(`mlopt_kernel.weights`).  The discovery side of the same substrate —
+machine-minted laws and the admission gauntlet — is the companion
+paper's story [@mlopt-graphopt].
+
+# The domain {#sec-domain}
+
+## The board: one program, codegen laws, a priced oracle
+
+`KernelBoard` (`src/mlopt_kernel/board.py`) wraps `SearchEnv` — the
+per-episode e-graph — with a kernel referee and kernel economics.
+The state a player observes is the observable a real compiler has:
+the program's op vocabulary (`ops`), the rule names whose *checked*
+LHS occurs in the program (`matches` — the pattern binds *and* the
+guard passes, so a listed move can actually fire), a `Const`-leaf
+flag (the reciprocal site's tell), step count, and current/baseline
+cost.  Actions are the bank's rule names plus `stop` — ending
+evaluation is a legal move, and a free one: firing a codegen law
+models a compile/measure oracle call, so each fire pays
+`step_cost = 0.05` off its normalized `kernel_cost` improvement
+while `stop` pays nothing.  "Is compiling this candidate worth the
+oracle call" is the stop problem the board actually scores.  The
+episode ends at the horizon (8), on `stop`, or when patience
+exhausts; the terminal report carries the certificate verdict.
+
+## The move set: twenty-six laws in three families
+
+`KERNEL_RULES` (`src/mlopt_kernel/laws.py`) is twenty-six rules,
+ordered so deeper fusions sit ahead of strength reductions:
+
+| family | laws | what it mints |
+|---|---|---|
+| fusion folds | 19 | `FUSED_KERNEL_OPS` — `kf_*` compiled composites + `om_decayed` |
+| schedule folds | 5 (`kern_fuse_chunk_scan_{2..6}`) | `om_chunk_scan` — a `SCHEDULED_KERNEL_OPS` marker |
+| strength reductions | 2 | `mul`/`rsqrt`-free arithmetic the device emits anyway |
+
+: The codegen bank, by family. {#tbl-bank}
+
+The fusion arm mirrors what Inductor actually emits — elementwise
+gate fusions (`a·σ(b)` → `kf_silu`, `a/(|b|+c)` → `kf_softsign`),
+the exp/sum normalization a softmax really is (`kf_softmax` — the
+kernel twin of the shipped `softmax_fold`), the norm blocks
+(`kf_layernorm`, `kf_rmsnorm`), matmul epilogues (`kf_mm_bias`,
+`kf_mm_scale`, `kf_mm_sb`, `kf_mm_gelu`), the attention chains
+(`kf_softmax_mm`, and `kf_sdpa` folding the whole
+`softmax(mm·s)·v` block — plain or `tanh` soft-capped — to one
+launch), plus the second-generation residue family the measured
+triton gap named: `kf_addmul_tanh` and `kf_silu_sigmoid` fold the
+pointwise op a first-generation fusion *left surviving*, and
+`kf_addmul2`/`kf_mul3` close the residue shapes the strength
+reductions expose.  Side conditions are data where the `cond`/`dspec`
+DSL reaches (the keepdim/single-axis gate on the softmax site is the
+shipped `softmax_fold`'s verbatim); the chunk-scan family's `check`
+runs the real plan parse — a concat that fails the parse keeps its
+spelled evaluation, so the marker is never minted on a non-scan.
+
+The scheduled family is the newest arm and the paper's headline
+mechanism: `concat(x₁..xₙ, dim) → om_chunk_scan(x₁..xₙ, dim)` marks a
+concat-of-chunks site as *one scheduled block* — a schedule boundary,
+not a compiled composite.  Concat is variadic in the IR while a
+pattern is fixed-arity, so the law is a family (the binary member
+does the work on the extracted carrier's nested-binary spine: each
+minted marker flattens again at the level above until the spine is
+marked).
+
+Two design notes the e-graph forces.  A *wrapper* marker
+(`k_fused(X)`) would merge into `X`'s e-class and point back at it —
+a cyclic enode the extractor can never pick — so fused ops take the
+region's *leaves* as children and extraction chooses spelled-vs-fused
+purely on cost.  And the bank deliberately stays out of the shipped
+`DEFAULT` ruleset: these rules only pay under `kernel_cost`, so
+`Optimizer.search`/`lower` never sees them — the codegen arm reaches
+programs only through this domain's sink.
+
+## The cost model: launches plus op weight
+
+`kernel_cost` (`src/mlopt_kernel/cost.py`) prices two things: a
+*launch* per emitted kernel and an *op weight* for the expensive
+elementary ops (`pow` 4, `div`/`rsqrt`/`tanh`/`sigmoid`/`exp`/`gelu`
+2 — the arithmetic a device kernel replaces anyway).  Fused ops
+weigh exactly one launch.  Layout ops — `split`/`select`/`reshape`-family/`contiguous`/`detach_` —
+price at zero (metadata-only on device); `concat` deliberately stays
+a launch because `cat` materialises a copy.  `om_chunk_scan` prices
+at *zero launches*: the marker emits no kernel of its own — the
+block's GEMMs are billed at its arm operands — so a marked concat
+spine strictly wins per node and the nested fold extracts whole
+rather than piecemeal.  @sec-limitations names where this model is
+honestly wrong.
+
+## The sink and the scheduled executor
+
+`KernelSink` (`src/mlopt_kernel/sink.py`) implements the `Sink` port
+over a torch composite — a peer of the ONNX sink, smaller.  The
+binding table covers the elementwise + reduction surface the bank
+reaches, the layout ops real carriers carry, the `linear` GEMM slot,
+and the decayed-scan vocabulary (`decay`/`decay_vec`/`om_decayed` —
+carrier semantics vendored so the package stays carrier-free).
+Each `FUSED_KERNEL_OPS` node lowers to `torch.compile` of its
+composite body — one Inductor-generated kernel (Triton on CUDA) where
+the spelled program dispatched an op at a time.  Each
+`SCHEDULED_KERNEL_OPS` node routes to a cached `ScanRunner` — the
+pairwise-batched chunk schedule vendored carrier-free into
+`mlopt_kernel.scan`: batched score/state/pair GEMMs plus segment-sum
+accumulation, slice restacks as reshape+permute views (zero kernels
+where the spelled tape copied), per-forward and static-subtree memos
+(the carrier's own memoised-eval choices).  A scheduled node whose
+arms no longer parse falls back to the spelled `cat` — a drop-in,
+never a silent drop.
+
+# The referee {#sec-referee}
+
+A codegen move scores only through three legs, in order of
+cheapness:
+
+1. **Derivation.**  The terminal extraction must certify: either the
+   in-graph certificate replay (`EGraph.certificate` +
+   `verify_certificate` — no discovery dependency) or, under the
+   `kernel` play domain, `mlopt_discovery.verifier.verify_law`
+   deriving the scheduled candidate against the spelled source under
+   the bank.
+2. **Numeric verify — verify-first.**  `KernelSink.verify` runs the
+   spelled reference and the scheduled candidate *in this sink's own
+   runtime* on random fp64 feeds.  Every fused op in the binding
+   table verifies `max_abs = 0.0` against its spelled site; the
+   extracted retnet carrier verifies `rel 1.6–1.9e-07` at fp32.
+   A fused kernel ships on the report, never on the law.
+3. **Measured pay.**  `bench.discovery.kernel` lowers both arms,
+   verifies them, then times spelled vs scheduled (CUDA fp32,
+   ~50-rep median) — plus a hand-Triton arm where a builder is
+   registered (`bench/limits/triton`): the practitioner's kernel is
+   the field baseline, and `kernel_flat` honestly reports `no triton
+   kernel registered` rather than scoring a phantom win.
+
+One measured finding belongs to the referee itself: the first
+`kernel_softmax_mm` draft *failed* verify — not a law bug but the
+spelled reference's `exp(qk)` overflowing fp32 where the fused
+max-shifted softmax stays finite (`notes/kernel-engineer-board.md`).
+The fused op is strictly more numerically stable than the spelling it
+folds; the verify leg is what surfaced it.
+
+# The players {#sec-players}
+
+The `kernel` domain seats the shipped roster through the registry
+seam — `linear`/`linear-greedy`/`linear-cold`/`random`/`playbook`
+all play `kernel`; `distilled` and `neural` honestly report
+does-not-play (their artifacts bind other boards).  The feature spec
+(`KERNEL_SPEC`) is the observable the board exposes: progress and
+banked improvement (`st:steps`, `st:improve`), the site count
+(`st:sites`), binary op-presence flags (`st:op:*`), the match
+interaction `x:m` (does this law's checked pattern occur here — the
+feature that says a matching fusion is the one that can pay its
+compile cost), the stop pair (`x:stop`, `x:stop:imp`), and hashed
+rule buckets `a:r:*`.  The prior (`KERNEL_PLAYER_WEIGHTS`, v2) is
+match-oracle imitation + REINFORCE, baked by
+`scripts/train_kernel_prior.py`.
+
+The leaderboard under the audited protocol — 24 held-out cases,
+budget 8, `bench.players.run --boards kernel`, independent
+reproduction bit-identical (`docs/results_kernel_check.md` §2):
+
+| player | reward/ep | evals/ep | note |
+|---|---|---|---|
+| `linear-greedy` | **0.5598** | 2.29 | short lines — extracts early |
+| `linear` | 0.4992 | 3.42 | |
+| `playbook` | 0.2004 | 8.0 | drains the budget |
+| `linear-cold` | 0.1452 | 6.17 | the untrained control |
+| `random` | 0.0993 | 5.63 | the floor |
+
+: Kernel-board leaderboard — audited protocol, verified bit-identical.
+{#tbl-leaderboard}
+
+All 24 episodes end in certified extraction for every arm.  On the
+grown bank + enlarged case pool the v2 prior re-measures higher
+(`linear-greedy` 0.652, `linear` 0.587, `playbook` 0.290,
+`linear-cold` −0.097, `random` −0.034 — same protocol, fresh pool;
+`notes/kernel-engineer-board.md`), and the retrain is parity
+held-out: 0.646 trained-greedy = 0.646 shipped-greedy — the v1
+prior's generalization rode `x:m` alone, so v2 is honest provenance
+(every rule's `a:r` bucket trained), not a gain.  The imitation
+dependence does not shrink: cold-start REINFORCE plateaus at ~0.29
+greedy — the imitation phase remains what carries the prior, kept as
+a standing caveat.
+
+# Results {#sec-results}
+
+## Verified fusions against the spelled baseline {#sec-fusions}
+
+The audited table — `python -m bench.discovery.kernel`, CUDA fp32,
+50-rep median, the 11-case suite independently re-measured on the
+same box (`docs/results_kernel_check.md` §1; every row
+`verified=True` on both the scheduled and Triton arms):
+
+| case | spelled µs | scheduled µs | speedup | triton µs |
+|---|---|---|---|---|
+| kernel_silu | 475.0 | 209.6 | 2.27× | 201.5 |
+| kernel_softsign | 666.2 | 211.7 | 3.15× | 201.3 |
+| kernel_fma | 757.3 | 565.7 | 1.34× | 292.3 |
+| kernel_swiglu | 754.3 | 303.0 | 2.49× | 291.6 |
+| kernel_softmax | 667.0 | 210.0 | 3.18× | 199.5 |
+| kernel_layernorm | 1050.5 | 210.5 | 4.99× | 200.1 |
+| kernel_mm_bias | 856.6 | 763.2 | 1.12× | 940.9 |
+| kernel_mm_scale_bias | 1088.5 | 850.9 | 1.28× | 920.7 |
+| kernel_strength | 681.0 | 663.4 | 1.03× | 291.8 |
+| kernel_mixed | 948.7 | 492.7 | 1.93× | 291.0 |
+| kernel_flat (control) | 662.4 | 663.2 | 0.999× | — skip |
+
+: The 11-case audit table — verified fusions, hand-Triton baseline.
+{#tbl-fusion}
+
+The table is honest in both directions.  Single fusions land *at*
+the hand kernel (209–212 µs vs 199–202) — a compiled `kf_*`
+composite matches a tutorial-tile Triton kernel on the cases the law
+folds whole.  The mm-epilogue rows invert the comparison the other
+way: Inductor's mm path (763/851) *beats* the tutorial tile
+(941/921) at this size.  And the partial-fusion rows show the
+residue the next arm was built for: `fma` 566 vs 292, `mixed` 493
+vs 291, `strength` 663 vs 292 — the folded region pays, the leftover
+pointwise launch does not.
+
+The bank then grew to 21 laws over three more measured arms
+(`notes/kernel-engineer-board.md`; the case suite is now 29).  The
+residue rows closed — `kernel_fma` 566→~309 µs (≈/beats triton),
+`kernel_mixed` 493→308, `kernel_strength` 663→369 (7→1 launches,
+1.88×, ~90% of the hand kernel's 333) — the whole attention block
+folded to `kf_sdpa` (1.78×; soft-capped twin 1.92×, *beating* the
+hand pipeline it trailed as a two-launch chain), and the
+pointwise-pair folds paid (addmul2 2.44×, powscale 1.61×).  The arms'
+honest negatives are in @sec-limitations: the two bias-free mm
+epilogues measure parity/loss (mm_scale 1.01×, mm_gelu 0.94×), and
+every `om_decayed` family case measures 0.74–0.99×.
+
+## Case study: the retnet carrier {#sec-casestudy}
+
+The domain's real target is not the bench archetypes — it is the
+~1.6× residual the parent's whole-model audit left between the best
+delivered chunked-decayed carrier (`fused32+graph` 0.454 ms) and the
+FLA reference (~0.28 ms, carried retro).  The independent check
+(`docs/results_kernel_check.md` §4) found the kernel board
+structurally unable to touch it on three grounds: 8 of the
+extracted carrier's 14 ops were outside `KernelSink.supported_ops`
+(unlowerable at all); of the bank, only `kern_div_recip` fired on
+the term (cost 368→349, still unlowerable); and the bank sits
+outside `DEFAULT`, so the delivery path never sees it.  Two arms
+closed the gap; the measured ladder is the paper's headline.
+
+**Arm 1 — vocabulary** (`docs/results_kernel_vocab.md`).  Nine
+binding-table entries (`linear`, `concat`, `split`,
+`contiguous`/`detach`/`detach_`, `decay`/`decay_vec`, `om_decayed`)
+plus `kern_fuse_om_decayed` folding the spelled `matmul(mul(s,d),v)`
+site — the op keeps the carrier name, so an extracted `om_decayed`
+enode and a minted one are the same kernel.  The extracted carrier
+(T=512/K=4, root `concat`, 14 distinct ops, 145 nodes) now lowers
+with **0/14 ops outside the table** and verifies (`rel 1.61e-07`,
+fp32).  But the speed gap was *schedule, not vocabulary*: the
+sink's per-op dispatch tape under a CUDA graph lands 1.011 ms vs
+the "batched" carrier's 0.537 ms — replayed per-op launches cost
+~2× the pairwise-batched chunk schedule.  Compiled per-op fused ops
+are *slower* than eager at this tape length (5.49 vs 4.29 ms —
+dispatch premium beats the fusion win at 145 nodes), and whole-graph
+`torch.compile` of the executor graph-breaks into fragments
+(3.81 ms).
+
+**Arm 2 — schedule** (`docs/results_chunk_scan.md`).  The
+`kern_fuse_chunk_scan` family marks the concat spine; the executor
+gains scheduled dispatch plus a per-forward memo (a DAG-shared
+subterm — the shared q/k/v projections feeding every chunk's
+`split` — evaluates once per call, not once per use; that memo
+alone moves the spelled tape+graph 1.011 → 0.537 ms).  On the real
+extraction — a nested-binary concat over 7 chunk arms of *mixed*
+size (4×32 + 3×128) — the fold mints `om_chunk_scan` at 5 of 6
+concat nodes (`kernel_cost` 206 → 201); the root concat stays
+spelled because the uniform-shape gate vetoes the mixed group — the
+same gate the carrier's own `ChunkedDecayModule` has.
+
+| arm | med ms | note |
+|---|---|---|
+| spelled-eager32 | 0.396 | one unchunked masked mm |
+| fused(exec)32 | 2.634 | incumbent per-op executor, eager |
+| kernel_tape (per-op, eager) | 3.012 | memo'd (was 4.29) |
+| kernel_scan (scheduled, eager) | 2.154 | batched plan, Python-dispatched |
+| kernel_scan (spelled-cat path) | 2.262 | `compile_fused=False` fallback |
+| kernel_tape + CUDA graph | 0.537 | was 1.011 — the memo alone |
+| carrier32 + CUDA graph | 0.538 | **serial fallback** — see text |
+| fused32 + CUDA graph (incumbent) | 0.454 | the audit's delivery path |
+| **kernel_scan + CUDA graph** | **0.271** | two scheduled blocks + one cat |
+| fla-chunk | ~0.28 | carried retro — `fla-core` absent |
+
+: The chunked-scan ladder — fp32 CUDA, median of 30; verify32
+`rel 1.93e-07`, passed. {#tbl-ladder}
+
+The ladder is honest in both directions, and one cell needs the
+text: the "batched carrier" arm at 0.537 turns out to be **serial**
+— `build_decayed_plan` returns `False` on this exact term (the
+mixed 32/128 chunk sizes fail its uniform-shape gate), so the 0.537
+was the serial IRModule under a graph all along; the memo'd tape
+reaching the same 0.537 confirms they are the same schedule.  The
+pairwise-batched carrier never ran on this term — `om_chunk_scan`
+is the *first* lowering that actually batches it (per uniform-chunk
+group).  Net: the scheduled fold at **0.271 ms beats every arm** —
+the carrier (0.537), the incumbent fused delivery (0.454), the
+spelled eager module (0.396) — and lands at or below the ~0.28 ms
+FLA reference.  The named residual is attacked; what the claim does
+*not* say is in @sec-limitations.
+
+# Limitations and honest negatives {#sec-limitations}
+
+- **The eager scheduled path is Python-bound.**  The schedule win is
+  realised under graph replay: `kernel_scan` eager measures 2.15 ms
+  vs 0.271 ms graphed — the batched plan replays at Python dispatch
+  cost.  The small bench row `kernel_chunk_scan` honestly reports
+  0.198× (Python-bound at toy sizes, same signature as
+  `kernel_decayed_intra`'s 0.546×).  Making the plan tape
+  compile-friendly is unexplored — the runner is a term-walking
+  evaluator, not a compilable composite.
+- **The remaining `cat`.**  Mixed chunk sizes stay split: the fold
+  minted 5 of 6 concat nodes; the root survives as one spelled `cat`
+  of two scheduled blocks — measured headroom ~1 launch.  A
+  whole-scan fold needs per-group plans under one marker.
+- **The FLA comparison is parity on a launch-bound term.**  At
+  T=512/d=16 the scheduled block still emits ~10 kernels; the real
+  FLA kernel does the scan in-register and would pull away in the
+  GEMM-bound regime at larger T/K.  The honest next arm is a fused
+  Triton scan in `bench/limits/triton/` style — not built.  And
+  `fla-core` is absent here: the ~0.28 ms reference is a carried
+  retro number from the parent repo, not a re-measurement.
+- **`om_decayed` is a vocabulary win, not a codegen win.**  The fold
+  verifies and prices 1 launch, but measures 0.74–0.90× at bench
+  sizes and a monotone 0.97→0.99 asymptote across the T=512–4096
+  ladder — never paying at any measured size.  The deficit is the
+  per-op `torch.compile` dispatch premium (~30–600 µs) against a
+  saved materialisation that is bandwidth-trivial next to a real
+  GEMM: the launch-counting cost model over-prices this fold.  It
+  earns its place by letting the bank *name* the decayed element —
+  and as the intra site the chunk-scan parser accepts — not by its
+  measured pay.
+- **The launch model's other misses.**  `concat` priced at 1 launch
+  is a deliberate approximation; two mm-epilogue folds measure
+  parity/loss (mm_scale 1.01×, mm_gelu 0.94× — mm-dominated, the
+  absorbed pointwise is noise at this size); bench variance moved
+  `kernel_decayed_chunks` from 2.35× to ~parity across re-runs
+  (recompile-limit churn — variance-dominated, documented).
+- **Compile economics invert at tape length.**  Per-op compiled
+  fused ops lose to their eager bodies on a 145-node tape (5.49 vs
+  4.29 ms); whole-graph `torch.compile` of the executor graph-breaks
+  per binding call (3.81 ms).  The `kf_*` pay is a bench-case result
+  (one fused op per program), not a long-tape result.
+- **Bank outside `DEFAULT`.**  The codegen laws pay only under
+  `kernel_cost`, so they are deliberately out of the shipped
+  ruleset — `Optimizer.search`/`lower` never fires them; the reach
+  runs through this domain's board + sink.
+- **The prior rides imitation.**  Cold-start REINFORCE plateaus
+  (~0.29 greedy) while the warm-started prior holds 0.65; what
+  carries cold-start exploration is unmeasured.  The bank has since
+  grown past the v2 prior's trained buckets — a v3 retrain is the
+  open arm.
+- **Private evidence.**  The box (RTX 2050 / 11 GB), the noise band
+  (load average 5–7 during the audit), and the numbers are
+  repo-internal.  `kernel_decayed`'s per-run spread (0.69–1.17×)
+  is the honest statement: small-case dispatch rows are
+  variance-dominated.
+
+# Related work {#sec-related}
+
+**Schedule languages.**  Halide [@ragan2013halide] is the ancestor
+of the split this paper exploits — the algorithm is the term, the
+schedule is a second object — but Halide schedules are hand-chosen
+or autotuned over a fixed body, where `om_chunk_scan` is a schedule
+*minted by a verified rewrite*: the schedule boundary enters the
+program as a law-applied term, checked by the same certificate
+machinery as a fusion.  Triton [@tillet2019triton] is the
+practitioner's language and our field baseline — every `triton µs`
+column above is a hand kernel in `bench/limits/triton/`; the
+scheduled fold is what the tutorial tile does not express.
+
+**Learned autotuning.**  TVM [@chen2018tvm], AutoTVM
+[@chen2018autotvm] and Ansor [@zheng2020ansor] learn a cost model
+over a *template* space — the program's semantics are fixed by the
+template and the search prices parameter settings.  kernelopt's
+moves are semantic rewrites instead: the search changes *what the
+program is*, and the referee must re-prove equality because the
+moved program is a different object, not a re-parameterized one.
+The analogue of their learned cost model is the player prior over
+certified moves.
+
+**Inductor as incumbent.**  PyTorch 2 / Inductor
+[@ansel2024pytorch2] fuses pointwise ops and emits the graph a
+human optimizer could reach — our fused ops literally ride it (a
+`kf_*` lowers to `torch.compile` of its composite).  The measured
+difference is the schedule boundary: on the 145-node carrier
+Inductor sees a per-op tape or graph-breaks on the evaluator
+(3.81 ms), where the marked concat folds to a batched plan
+(0.271 ms).  The contribution is not a better Inductor but a
+verified route to a schedule it cannot name.
+
+**Rewrite-level prior art.**  TENSAT [@yang2021tensat] applies
+equality saturation to tensor graphs with fixed, hand-written rule
+sets; TASO [@jia2019taso] auto-generates and formally verifies
+graph substitutions; Glenside [@smith2021glenside] rediscovers
+access-pattern rewrites.  kernelopt's bank is the same object class
+as theirs — fixed, hand-written laws — so the differentiation here
+is not the bank's provenance but the *game*: the laws are moves a
+learned player sequences under a measured referee, on a board whose
+domain grew under the player (the chunk-scan arm did not exist when
+the v1 prior shipped, and the prior generalizes to it untrained via
+`x:m`).
+
+**Learned play over compilation.**  CompilerGym
+[@cummins2022compilergym] casts optimization as RL over a fixed
+action space; AlphaTensor [@fawzi2022alphatensor] searches one
+fixed structure for faster algorithms.  The kernel board is the
+same shape over a *verified* move set — the certified referee is
+the piece those environments approximate with a cost model alone.
+
+**The FLA reference.**  The `fla-chunk` row is the
+flash-linear-attention library's [@fla] chunked linear-attention
+kernel — the hand-written in-register scan the honest residual
+names as the real comparison at scale.
+
+# Reproduction {#sec-repro}
+
+All numbers are reproducible from the committed tree at
+`handl-lang/kernelopt` (private):
+
+```sh
+uv sync
+.venv/bin/python -m pytest tests/ -q                    # the unit layer (law guards, verify-first sink)
+.venv/bin/python -m bench.discovery.kernel            # the measured case suite
+.venv/bin/python -m mlopt_kernel.play --domain kernel \
+    --train-cases 8 --eval-cases 4 --budget 8         # the game
+.venv/bin/python -m mlopt_kernel.play --domain kernel --deliver
+```
+
+The evidence docs each claim cites are `docs/results_kernel_check.md`
+(the independent audit: 11-case table, leaderboard, the unlowerable
+verdict), `docs/results_kernel_vocab.md` (the vocabulary arm and the
+tape ladder — probes `bench/drivers/probes/kernel_vocab_probe.py`)
+and `docs/results_chunk_scan.md` (the schedule arm and the headline
+ladder — probe `bench/drivers/probes/kernel_scan_probe.py`, run in
+the parent env with `PYTHONPATH=<kernelopt>/src`); the design note
+with the grown-bank measured arms is
+`notes/kernel-engineer-board.md`.  The retnet carrier extraction is
+the parent repo's (`handl-lang/graphopt`, `mlopt_carriers`
+`decayed_lower`); FLA is the carried retro there.
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
