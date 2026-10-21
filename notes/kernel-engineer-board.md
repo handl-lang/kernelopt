@@ -269,6 +269,79 @@ Prior caveat stands: the shipped `KERNEL_PLAYER_WEIGHTS` carries the
 new laws through `x:m`/`a:r:*` buckets untrained — a v3 prior retrain
 remains the open arm.
 
+## 2026-10-21 (latest): pointwise-pair `kf` ops + the `om_decayed` size ladder — measured results
+
+Bank grew 19 → 21 laws.  Two pointwise-pair folds close the residue
+shapes the strength reductions expose — the last named codegen gap —
+plus a sized `om_decayed` ladder pricing the fold's crossover
+directly.
+
+New laws (verify-first; no guards — the sites are shape-free):
+
+| law | site → fused op | note |
+|---|---|---|
+| `kern_fuse_addmul2` | `add(mul(a,b), mul(c,d))` → `kf_addmul2(a,b,c,d)` | the two-product sum `x·x + y·¼` `kern_fuse_addmul` reached as `kf_addmul(a,b, c·d)` — a fused op plus a surviving spelled mul |
+| `kern_fuse_mul3` | `mul(mul(a,b), c)` → `kf_mul3(a,b,c)` | the weighted-square `pow(x,2)·w` after `kern_square_strength` |
+
+Both pay only when the children are leaves — a spelled composite
+child stays costed inside the fused op's args, so `kf_swiglu` still
+beats `kf_mul3(a, σa, b)` (3 vs 1) and the law never competes with a
+deeper fold.  `kernel_strength` now extracts
+`kf_addmul2(x, x, y, 0.25)` — the second launch is gone.
+
+Case table (28 cases, CUDA fp32, ~50 reps, median — new/changed rows
+in **bold**; unchanged rows re-measured this run, drifting within the
+documented band — this host's absolute µs run a few % off the last
+table's, e.g. sdpa 1971 vs 2029):
+
+| case | cost | spelled µs | sched µs | speedup | triton µs (verified) |
+|---|---|---|---|---|---|
+| kernel_strength | **7→1** | 695 | 369 | **1.88×** | 333 ✓ |
+| kernel_powscale (new) | 5→1 | 507 | 314 | **1.61×** | — skip (no kernel) |
+| kernel_addmul2 (new) | 3→1 | 762 | 312 | **2.44×** | — skip (no kernel) |
+| kernel_decayed | 2→1 | 138 | 199 | **0.69× — honest loss** | 119 ✓ |
+| kernel_decayed_mask | 5→4 | 122 | 156 | **0.78× — loss** | 127 ✓ |
+| kernel_decayed_intra | 6→5 | 141 | 162 | **0.87× — loss** | — skip |
+| kernel_decayed_pair | 12→11 | 237 | 650 | **0.36× — loss** | — skip |
+| kernel_decayed_chunks | 11→9 | 288 | 1129 | **0.26× — loss** | — skip |
+| kernel_decayed_t512 (new) | 2→1 | 1080 | 1113 | **0.97×** | — skip |
+| kernel_decayed_t1024 (new) | 2→1 | 3854 | 3939 | **0.98×** | — skip |
+| kernel_decayed_t2048 (new) | 2→1 | 14720 | 15002 | **0.98×** | — skip |
+| kernel_decayed_t4096 (new) | 2→1 | 60984 | 61600 | **0.99×** | — skip |
+
+**Verdicts.**
+
+1. **Pointwise-pair `kf` ops — PASS.**  Both verify-equal and both
+   pay: `kernel_strength` closes its second launch (480→369 µs,
+   1.39→1.88×, now ~90% of the hand triton kernel's 333 rather than
+   61% of it); `kernel_powscale` (1.61×) and `kernel_addmul2` (2.44×)
+   land in the single-fusion band.  The residue gap the last two
+   arms named is closed as far as the `kf_*` vocabulary reaches —
+   every surviving spelled pointwise op in the case table is now a
+   deliberate honest negative, not a missing fold.
+2. **`om_decayed` asymptote — measured, honest answer: it never
+   pays.**  The ladder is monotone in T — 0.97 → 0.98 → 0.98 →
+   0.99 — asymptoting to parity at T=4096 without ever inverting,
+   confirming the earlier scale probe (0.80→0.88→0.99) on the timed
+   row.  The deficit is the per-op `torch.compile` dispatch premium
+   (~30–600 µs across the sweep), and the fold's win — one fewer
+   `(…,T,K)` materialisation — stays bandwidth-trivial next to a
+   real GEMM at every size measured.  The small-case rows straddle
+   0.69–0.87 this run (`decayed_pair`/`decayed_chunks` swung deep on
+   recompile-limit churn — two fused ops, two dispatches; treat as
+   variance-dominated, consistent with the earlier 0.67–0.79 band).
+   **The `om_decayed` fold is a vocabulary win, not a codegen win:**
+   it lets the bank *name* the decayed element carriers extract, and
+   the launch-counting cost model prices it 1 launch honestly — but
+   on this sink the measured pay is ≤ parity at every size.  The
+   real residual stays the schedule-level chunked batching the audit
+   named.
+
+Named next arms, updated: the `kf_sdpa` variants (causal-mask and
+`enable_gqa` spellings — real model patterns the bank cannot yet
+name) and the v3 prior retrain.  The `strength`/`mixed`-class
+residue story is now complete.
+
 2026-10-19, post-Lotufo.  The same machinery that plays law-discovery
 can play kernel engineering — a second domain, not a second system.
 

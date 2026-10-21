@@ -83,7 +83,7 @@ def _rmsnorm_term(eps=Const(1e-6), power=Const(2), keepdim=True):
 
 class TestLaws:
     def test_bank_shape(self):
-        """Nineteen codegen laws; the fused ops take leaf children."""
+        """Twenty-one codegen laws; the fused ops take leaf children."""
         assert [r.name for r in KERNEL_RULES] == [
             "kern_fuse_silu",
             "kern_fuse_softsign",
@@ -91,6 +91,8 @@ class TestLaws:
             "kern_fuse_swiglu",
             "kern_fuse_silu_sigmoid",
             "kern_fuse_addmul_tanh",
+            "kern_fuse_addmul2",
+            "kern_fuse_mul3",
             "kern_fuse_softmax",
             "kern_fuse_softmax_mm",
             "kern_fuse_sdpa",
@@ -403,6 +405,64 @@ class TestLaws:
         assert best is not None and best.op == "kf_addmul"
         assert kernel_cost(best) == 2.0
 
+    def test_addmul2_absorbs_both_products(self):
+        """``a·b + c·d`` extracts the one-launch ``kf_addmul2``."""
+        eg = EGraph()
+        t = Op.make("add", Op.make("mul", X, Y), Op.make("mul", Y, X))
+        root = eg.add_term(t)
+        eg.apply_rule(_rule("kern_fuse_addmul"), root)
+        assert eg.apply_rule(_rule("kern_fuse_addmul2"), root)
+        best = eg.extract_best(root, kernel_cost)
+        # kf_addmul(x, y, y·x) keeps a spelled mul — the pair wins.
+        assert best == Op.make("kf_addmul2", X, Y, Y, X)
+        assert kernel_cost(best) == 1.0
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_addmul2_closes_strength_residue(self):
+        """``pow(x,2) + y/4`` reduces then folds whole — one launch."""
+        eg = EGraph()
+        t = Op.make(
+            "add",
+            Op.make("pow", X, Const(2)),
+            Op.make("div", Y, Const(4.0)),
+        )
+        root = eg.add_term(t)
+        eg.apply_rule(_rule("kern_square_strength"), root)
+        eg.apply_rule(_rule("kern_div_recip"), root)
+        eg.apply_rule(_rule("kern_fuse_addmul"), root)
+        assert eg.apply_rule(_rule("kern_fuse_addmul2"), root)
+        best = eg.extract_best(root, kernel_cost)
+        # kf_addmul2(x, x, y, 0.25) — the reduced pair, one launch.
+        assert best is not None and best.op == "kf_addmul2"
+        assert kernel_cost(best) == 1.0
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_mul3_absorbs_square_residue(self):
+        """``pow(x,2)·y`` reduces to ``mul(mul(x,x),y)`` → kf_mul3."""
+        eg = EGraph()
+        t = Op.make("mul", Op.make("pow", X, Const(2)), Y)
+        root = eg.add_term(t)
+        eg.apply_rule(_rule("kern_square_strength"), root)
+        assert eg.apply_rule(_rule("kern_fuse_mul3"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best == Op.make("kf_mul3", X, X, Y)
+        assert kernel_cost(best) == 1.0
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_mul3_loses_to_deeper_fusion(self):
+        """A spelled-composite child prices mul3 out — swiglu wins."""
+        eg = EGraph()
+        t = Op.make("mul", Op.make("mul", X, Op.make("sigmoid", X)), Y)
+        root = eg.add_term(t)
+        eg.apply_rule(_rule("kern_fuse_mul3"), root)
+        eg.apply_rule(_rule("kern_fuse_swiglu"), root)
+        best = eg.extract_best(root, kernel_cost)
+        # kf_mul3(x, σx, y) costs 1+2 — the single-leaf fold wins.
+        assert best is not None and best.op == "kf_swiglu"
+
     def test_om_decayed_fires_and_extracts(self):
         """``matmul(mul(s, d), v)`` folds to the fused ``om_decayed``."""
         d = Var("d", TensorType((8, 8)))
@@ -525,6 +585,18 @@ class TestSink:
                 ),
                 Op.make("kf_addmul_tanh", X, Y, Y),
             ),
+            (
+                Op.make(
+                    "add",
+                    Op.make("mul", X, Y),
+                    Op.make("mul", Y, X),
+                ),
+                Op.make("kf_addmul2", X, Y, Y, X),
+            ),
+            (
+                Op.make("mul", Op.make("mul", X, Y), X),
+                Op.make("kf_mul3", X, Y, X),
+            ),
         ],
         ids=[
             "softmax",
@@ -533,6 +605,8 @@ class TestSink:
             "swiglu",
             "silu_sigmoid",
             "addmul_tanh",
+            "addmul2",
+            "mul3",
         ],
     )
     def test_new_fused_ops_verify(self, spelled, fused):

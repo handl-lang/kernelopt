@@ -1,7 +1,7 @@
 # ruff: noqa: RUF001, RUF002, RUF003 — math notation (≡, σ, −, ·) in docstrings.
 """The codegen law bank — schedule-level rewrites over the IR.
 
-Not a language: nineteen laws.  Seventeen fold spelled op-compositions
+Not a language: twenty-one laws.  Nineteen fold spelled op-compositions
 into *named fused-kernel ops* (``FUSED_KERNEL_OPS`` — the kernel
 vocabulary the :class:`~mlopt_kernel.sink.KernelSink` lowers as one
 compiled composite, in the repo's ``silu``/``sdpa``/``rms_norm``
@@ -25,7 +25,12 @@ folded to a single launch — the un-folded-matmuls gap the last
 measured arm named) — plus the
 second-generation residue family the measured triton gap named:
 ``kf_addmul_tanh`` and ``kf_silu_sigmoid`` fold the pointwise op a
-first-generation fusion *left surviving* into the fused op itself.
+first-generation fusion *left surviving* into the fused op itself —
+and ``kf_addmul2``/``kf_mul3`` close the two residue shapes the
+strength reductions expose: the two-product sum ``a·b + c·d``
+(``x·x + y·¼`` — the ``kernel_strength`` second launch) and the
+left-nested triple product ``(a·b)·c`` (the ``pow(x,2)·w`` spelling
+after ``kern_square_strength``).
 The newest fold reaches outside the ``kf_*`` family:
 ``kern_fuse_om_decayed`` mints ``om_decayed`` — the decayed
 carrier's masked score matmul — from the spelled
@@ -62,12 +67,14 @@ __all__ = [
     "KERNEL_RULES",
     "kern_div_recip",
     "kern_fuse_addmul",
+    "kern_fuse_addmul2",
     "kern_fuse_addmul_tanh",
     "kern_fuse_layernorm",
     "kern_fuse_mm_bias",
     "kern_fuse_mm_gelu",
     "kern_fuse_mm_scale",
     "kern_fuse_mm_scale_bias",
+    "kern_fuse_mul3",
     "kern_fuse_om_decayed",
     "kern_fuse_rmsnorm",
     "kern_fuse_sdpa",
@@ -95,6 +102,8 @@ FUSED_KERNEL_OPS = frozenset(
         "kf_swiglu",
         "kf_silu_sigmoid",
         "kf_addmul_tanh",
+        "kf_addmul2",
+        "kf_mul3",
         "kf_softmax",
         "kf_softmax_mm",
         "kf_sdpa",
@@ -168,6 +177,36 @@ kern_fuse_silu_sigmoid = R(
     "the double-gate the swiglu fold reaches as "
     "``kf_swiglu(a, σ(b))`` (one fused op plus a spelled σ), folded "
     "whole (the measured mixed-case gap).",
+)
+
+# The pointwise-pair residue folds — the shapes the strength
+# reductions leave spelled: ``kern_square_strength``/``kern_div_recip``
+# turn ``pow(x,2) + y/4`` into ``x·x + y·¼``, which
+# ``kern_fuse_addmul`` only reaches as ``kf_addmul(x, x, y·¼)`` — a
+# fused op plus a surviving spelled mul (the measured
+# ``kernel_strength`` second launch).  ``kf_addmul2`` absorbs *both*
+# products; ``kf_mul3`` absorbs the left-nested triple product
+# ``pow(x,2)·w`` reduces to.  Both pay only when the children are
+# leaves — a spelled composite child stays costed inside the fused
+# op's args, so e.g. ``kf_swiglu`` still beats ``kf_mul3(a, σa, b)``.
+kern_fuse_addmul2 = R(
+    "kern_fuse_addmul2",
+    Op.make("add", Op.make("mul", "a", "b"), Op.make("mul", "c", "d")),
+    Op.make("kf_addmul2", "a", "b", "c", "d"),
+    law="Two-product FMA: a·b + c·d lowers as one fused kernel — "
+    "the residue pair kern_fuse_addmul reaches as "
+    "``kf_addmul(a, b, c·d)`` (one fused op plus a spelled mul), "
+    "folded whole (the measured strength-case remainder).",
+)
+
+kern_fuse_mul3 = R(
+    "kern_fuse_mul3",
+    Op.make("mul", Op.make("mul", "a", "b"), "c"),
+    Op.make("kf_mul3", "a", "b", "c"),
+    law="Triple-product fusion: (a·b)·c lowers as one fused kernel — "
+    "the weighted-square spelling pow(x,2)·w leaves after "
+    "kern_square_strength (``mul(mul(x,x),w)`` — two launches), "
+    "folded whole.",
 )
 
 # The softmax fold, kernel-side — ``div(exp(u), Σexp(u))`` lowers as
@@ -470,6 +509,8 @@ KERNEL_RULES: tuple[Rewrite, ...] = (
     kern_fuse_swiglu,
     kern_fuse_silu_sigmoid,
     kern_fuse_addmul_tanh,
+    kern_fuse_addmul2,
+    kern_fuse_mul3,
     kern_fuse_softmax,
     kern_fuse_softmax_mm,
     kern_fuse_sdpa,

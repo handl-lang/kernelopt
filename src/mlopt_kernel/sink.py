@@ -263,6 +263,8 @@ def _bindings() -> dict[str, Any]:
             a * torch.sigmoid(a) * torch.sigmoid(b)
         ),
         "kf_addmul_tanh": lambda a, b, c: a * b + torch.tanh(c),
+        "kf_addmul2": lambda a, b, c, d: a * b + c * d,
+        "kf_mul3": lambda a, b, c: a * b * c,
         "kf_softmax": lambda u, dim: torch.softmax(u, dim=dim),
         "kf_softmax_mm": lambda u, v, dim: torch.matmul(
             torch.softmax(u, dim=dim), v

@@ -1,6 +1,6 @@
 """The kernelopt spike's bench cases — measured codegen pay.
 
-Twenty-two kernel cases: a spelled program, a codegen-law candidate, and
+Twenty-eight kernel cases: a spelled program, a codegen-law candidate, and
 the honest row — lower both through
 :class:`mlopt_kernel.KernelSink`, verify numerically (verify-first),
 then time spelled vs scheduled.  Where the case has a registered
@@ -152,6 +152,32 @@ def _mk_decayed_cases():
             ("kern_fuse_om_decayed",),
         ),
     )
+
+
+def _mk_decayed_scale_cases():
+    """The ``om_decayed`` size ladder — where the fold stops paying.
+
+    Same ``matmul(s⊙d, v)`` site as ``kernel_decayed``, T swept
+    512→4096 (B sized down to bound memory: the fold's win is one
+    less ``(…,T,K)`` buffer, the premium is the per-op compile
+    dispatch — the earlier scale probe measured the ratio climbing
+    0.80→0.88→0.99 and never inverting; this ladder prices the
+    crossover directly on the timed row).
+    """
+    out = []
+    for t, n in ((512, 8), (1024, 4), (2048, 2), (4096, 1)):
+        s = _v(f"sl{t}", (n, t, t))
+        d = _v(f"dl{t}", (t, t))
+        v = _v(f"vl{t}", (n, t, t))
+        out.append(
+            (
+                f"kernel_decayed_t{t}",
+                "speed",
+                Op.make("matmul", Op.make("mul", s, d), v),
+                ("kern_fuse_om_decayed",),
+            )
+        )
+    return tuple(out)
 
 
 def _cases():
@@ -408,7 +434,29 @@ def _cases():
                 "kern_square_strength",
                 "kern_div_recip",
                 "kern_fuse_addmul",
+                "kern_fuse_addmul2",
             ),
+        ),
+        # The pointwise-pair residues — the two shapes the strength
+        # reductions expose spelled.  ``kernel_powscale`` is the
+        # weighted square ``pow(x,2)·y`` (→ ``mul(mul(x,x),y)`` →
+        # ``kf_mul3``); ``kernel_addmul2`` is the two-product sum
+        # ``x·y + y·b`` direct (→ ``kf_addmul2``).
+        (
+            "kernel_powscale",
+            "speed",
+            Op.make("mul", Op.make("pow", x, Const(2)), y),
+            ("kern_square_strength", "kern_fuse_mul3"),
+        ),
+        (
+            "kernel_addmul2",
+            "speed",
+            Op.make(
+                "add",
+                Op.make("mul", x, y),
+                Op.make("mul", y, b),
+            ),
+            ("kern_fuse_addmul", "kern_fuse_addmul2"),
         ),
         (
             "kernel_mixed",
@@ -431,6 +479,7 @@ def _cases():
             (),
         ),
         *_mk_decayed_cases(),
+        *_mk_decayed_scale_cases(),
     )
 
 
