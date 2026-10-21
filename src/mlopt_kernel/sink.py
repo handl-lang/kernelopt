@@ -136,6 +136,26 @@ def _kf_rmsnorm(u: Any, dim: Any, eps: float) -> Any:
     )
 
 
+def _kf_sdpa(
+    a: Any, w: Any, s: Any, v: Any, dim: Any, cap: bool = False
+) -> Any:
+    """``softmax(mm(a,w)·s)·v`` — the whole-attention composite body.
+
+    One compiled unit covering the qk matmul, the scale, the
+    (max-shifted) softmax and the value matmul — where the
+    ``kf_softmax_mm(kf_mm_scale(...), v)`` chain launched two kernels
+    with the scaled-score buffer materialised between them.
+    ``cap=True`` applies the ``tanh`` soft-cap to the scaled score —
+    the bounded-logit spelling (the spelled reference stays finite
+    in fp32 where an uncapped ``exp(qk)`` can overflow at scale).
+    """
+    torch = _torch()
+    score = torch.matmul(a, w) * s
+    if cap:
+        score = torch.tanh(score)
+    return torch.matmul(torch.softmax(score, dim=dim), v)
+
+
 def _bindings() -> dict[str, Any]:
     """Build the kernel op table — a small torch composite vocabulary.
 
@@ -247,6 +267,7 @@ def _bindings() -> dict[str, Any]:
         "kf_softmax_mm": lambda u, v, dim: torch.matmul(
             torch.softmax(u, dim=dim), v
         ),
+        "kf_sdpa": _kf_sdpa,
         "kf_layernorm": _kf_layernorm,
         "kf_rmsnorm": _kf_rmsnorm,
         "kf_mm_bias": lambda a, w, b: torch.matmul(a, w) + b,

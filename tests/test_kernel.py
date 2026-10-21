@@ -83,7 +83,7 @@ def _rmsnorm_term(eps=Const(1e-6), power=Const(2), keepdim=True):
 
 class TestLaws:
     def test_bank_shape(self):
-        """Seventeen codegen laws; the fused ops take leaf children."""
+        """Nineteen codegen laws; the fused ops take leaf children."""
         assert [r.name for r in KERNEL_RULES] == [
             "kern_fuse_silu",
             "kern_fuse_softsign",
@@ -93,6 +93,8 @@ class TestLaws:
             "kern_fuse_addmul_tanh",
             "kern_fuse_softmax",
             "kern_fuse_softmax_mm",
+            "kern_fuse_sdpa",
+            "kern_fuse_sdpa_cap",
             "kern_fuse_layernorm",
             "kern_fuse_rmsnorm",
             "kern_fuse_mm_bias",
@@ -244,6 +246,63 @@ class TestLaws:
         eg = EGraph()
         root = eg.add_term(t)
         assert not eg.apply_rule(_rule("kern_fuse_softmax_mm"), root)
+
+    @staticmethod
+    def _sdpa_term(*, cap=False, keepdim=True):
+        """``matmul(softmax([tanh](mm·s)), v)`` — the whole-block site."""
+        w = Var("w", TensorType((8, 4)))
+        v = Var("v", TensorType((4, 4)))
+        score = Op.make("mul", Op.make("matmul", X, w), Const(0.25))
+        u = Op.make("tanh", score) if cap else score
+        return Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make(
+                    "sum", Op.make("exp", u), dim=-1, keepdim=keepdim
+                ),
+            ),
+            v,
+        )
+
+    def test_sdpa_folds_whole_block(self):
+        """The mm→scale→softmax→mm chain extracts one kf_sdpa."""
+        t = self._sdpa_term()
+        eg = EGraph()
+        root = eg.add_term(t)
+        eg.apply_rule(_rule("kern_fuse_mm_scale"), root)
+        eg.apply_rule(_rule("kern_fuse_softmax"), root)
+        eg.apply_rule(_rule("kern_fuse_softmax_mm"), root)
+        assert eg.apply_rule(_rule("kern_fuse_sdpa"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "kf_sdpa"
+        assert best.attrs["cap"] is False
+        assert (
+            kernel_cost(best) == 1.0
+        )  # one launch — beats the 2-chain
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_sdpa_cap_fires_only_on_tanh_site(self):
+        """The soft-cap fold mints ``cap=True``; plain declines it."""
+        t = self._sdpa_term(cap=True)
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert not eg.apply_rule(_rule("kern_fuse_sdpa"), root)
+        assert eg.apply_rule(_rule("kern_fuse_sdpa_cap"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "kf_sdpa"
+        assert best.attrs["cap"] is True
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_sdpa_declines_dropped_dim(self):
+        """The sdpa fold inherits the softmax site's keepdim gate."""
+        eg = EGraph()
+        root = eg.add_term(self._sdpa_term(keepdim=False))
+        assert not eg.apply_rule(_rule("kern_fuse_sdpa"), root)
+        assert not eg.apply_rule(_rule("kern_fuse_sdpa_cap"), root)
 
     def test_layernorm_fires_and_derives_eps(self):
         """The mean/var/rsqrt block folds to ``kf_layernorm``."""
@@ -557,6 +616,43 @@ class TestSink:
                 sink.lower(i_s), sink.lower(i_f), (x, wv)
             )
             assert rep2.passed and rep2.max_abs < 1e-9
+
+    @pytest.mark.parametrize("cap", [False, True], ids=["plain", "cap"])
+    def test_sdpa_fused_op_verifies(self, cap):
+        """``kf_sdpa`` (plain + soft-cap) verifies against its site."""
+        sink = KernelSink()
+        w = Var("w", TensorType((8, 4)))
+        v = Var("v", TensorType((4, 4)))
+        score = Op.make("mul", Op.make("matmul", X, w), Const(0.25))
+        u = Op.make("tanh", score) if cap else score
+        spelled = Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make("sum", Op.make("exp", u), dim=-1, keepdim=True),
+            ),
+            v,
+        )
+        fused = Op.make(
+            "kf_sdpa", X, w, Const(0.25), v, dim=-1, cap=cap
+        )
+        x = torch.randn(4, 8, dtype=torch.float64)
+        wv = torch.randn(8, 4, dtype=torch.float64)
+        vv = torch.randn(4, 4, dtype=torch.float64)
+        inputs = [X, w, v]
+        ir_s = IR(
+            root=spelled,
+            inputs=inputs,
+            input_names={t.name for t in inputs},
+        )
+        ir_f = IR(
+            root=fused, inputs=inputs, input_names=ir_s.input_names
+        )
+        rep = sink.verify(
+            sink.lower(ir_s), sink.lower(ir_f), (x, wv, vv)
+        )
+        assert rep.passed and rep.max_abs < 1e-9
 
     def test_mm_epilogues_verify(self):
         """The mm epilogue composites verify against spelled mm+b."""

@@ -390,6 +390,18 @@ def _triton_sdpa():
     return run
 
 
+def _triton_sdpa_cap():
+    """The capped-attention pipeline: mm·s → tanh-softmax → mm."""
+    mm = _triton_mm(None, bias=False)
+    mm_scale = _triton_mm(0.25, bias=False)
+    sm = _triton_softmax(cap=True)
+
+    def run(x, w):
+        return mm(sm(mm_scale(x, w)), w)
+
+    return run
+
+
 def _triton_om_decayed():
     """A batched tiled ``(s ⊙ d) @ v`` — the fused decayed element.
 
@@ -460,6 +472,31 @@ def _triton_om_decayed():
     return run
 
 
+def _triton_decayed_mask():
+    """The generated-mask element: ``tril(σ(g)^(i-j))`` + the batched mm.
+
+    The practitioner form of ``kernel_decayed_mask``: the decay rate
+    is a live feed (the carrier's sigmoid-parametrised scalar), so
+    the mask builds per call — the same per-call compute the
+    scheduled executor pays — then the fused ``(s ⊙ d) @ v`` kernel
+    reads it in place.
+    """
+    import torch
+
+    base = _triton_om_decayed()
+
+    def run(s, g, v):
+        t = s.shape[-1]
+        pos = torch.arange(t, device=s.device, dtype=s.dtype)
+        d = torch.tril(
+            torch.sigmoid(g)
+            ** (pos[:, None] - pos[None, :]).clamp_min(0)
+        )
+        return base(s, d, v)
+
+    return run
+
+
 _KERNEL_BUILDERS = {
     "kernel_silu": _triton_silu,
     "kernel_softsign": _triton_softsign,
@@ -476,7 +513,9 @@ _KERNEL_BUILDERS = {
     "kernel_mm_gelu": _triton_mm_gelu,
     "kernel_softmax_mm": _triton_softmax_mm,
     "kernel_sdpa": _triton_sdpa,
+    "kernel_sdpa_cap": _triton_sdpa_cap,
     "kernel_decayed": _triton_om_decayed,
+    "kernel_decayed_mask": _triton_decayed_mask,
 }
 
 

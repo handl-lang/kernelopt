@@ -1,6 +1,6 @@
 """The kernelopt spike's bench cases — measured codegen pay.
 
-Seventeen kernel cases: a spelled program, a codegen-law candidate, and
+Twenty-two kernel cases: a spelled program, a codegen-law candidate, and
 the honest row — lower both through
 :class:`mlopt_kernel.KernelSink`, verify numerically (verify-first),
 then time spelled vs scheduled.  Where the case has a registered
@@ -49,6 +49,109 @@ def _mk_decayed():
     d = _v("d", (128, 128))
     v = _v("v", (16, 128, 128))
     return s, d, v
+
+
+def _mk_decayed_cases():
+    """The carrier-style decayed-scan case builders — real spellings.
+
+    The ``om_decayed`` vocabulary measured against the spellings the
+    chunked decayed scan actually emits: the generated ``decay`` mask,
+    the ``linear``-produced score, the ``decay_vec``-gated cross term,
+    and the ``split``-chunked pair.  Every decay rate is a live
+    ``sigmoid(g)`` feed — the carrier parametrisation (g a learned
+    scalar, not a baked literal: a ``Const`` rate would pin the mask
+    generator to CPU and break under CUDA feeds).
+    """
+    # the generated-mask element: (s * tril(g^(i-j))) @ v
+    sm = _v("sm", (16, 128, 128))
+    gm = _v("gm", ())
+    vm = _v("vm", (16, 128, 128))
+    mask = Op.make("decay", Op.make("sigmoid", gm), t=128)
+    # the linear-projected score: (linear(x,w) ⊙ decay) @ v
+    xi = _v("xi", (128, 64))
+    wi = _v("wi", (128, 64))
+    gi = _v("gi", ())
+    vi = _v("vi", (128, 64))
+    # the two-term block arm: intra element + decay_vec cross term
+    sp = _v("sp", (128, 128))
+    gp = _v("gp", ())
+    vp = _v("vp", (128, 64))
+    gr = _v("gr", ())
+    xp = _v("xp", (128, 64))
+    wp = _v("wp", (64, 64))
+    up = _v("up", (64, 64))
+    row_gate = Op.make(
+        "unsqueeze",
+        Op.make("decay_vec", Op.make("sigmoid", gr), t=128),
+        dim=-1,
+    )
+    # the two-chunk scan: split views, per-chunk om_decayed, summed
+    sc = _v("sc", (16, 128, 64))
+    gc = _v("gc", ())
+    vc = _v("vc", (16, 128, 64))
+    chunk_decay = Op.make("decay", Op.make("sigmoid", gc), t=64)
+
+    def chunk(i):
+        return Op.make(
+            "matmul",
+            Op.make(
+                "mul",
+                Op.make("split", sc, sizes=(64, 64), dim=1, index=i),
+                chunk_decay,
+            ),
+            Op.make("split", vc, sizes=(64, 64), dim=1, index=i),
+        )
+
+    return (
+        (
+            "kernel_decayed_mask",
+            "speed",
+            Op.make("matmul", Op.make("mul", sm, mask), vm),
+            ("kern_fuse_om_decayed",),
+        ),
+        (
+            "kernel_decayed_intra",
+            "speed",
+            Op.make(
+                "matmul",
+                Op.make(
+                    "mul",
+                    Op.make("linear", xi, wi),
+                    Op.make("decay", Op.make("sigmoid", gi), t=128),
+                ),
+                vi,
+            ),
+            ("kern_fuse_om_decayed",),
+        ),
+        (
+            "kernel_decayed_pair",
+            "speed",
+            Op.make(
+                "add",
+                Op.make(
+                    "matmul",
+                    Op.make(
+                        "mul",
+                        sp,
+                        Op.make("decay", Op.make("sigmoid", gp), t=128),
+                    ),
+                    vp,
+                ),
+                Op.make(
+                    "mul",
+                    row_gate,
+                    Op.make("matmul", xp, Op.make("matmul", wp, up)),
+                ),
+            ),
+            ("kern_fuse_om_decayed",),
+        ),
+        (
+            "kernel_decayed_chunks",
+            "speed",
+            Op.make("add", chunk(0), chunk(1)),
+            ("kern_fuse_om_decayed",),
+        ),
+    )
 
 
 def _cases():
@@ -232,6 +335,55 @@ def _cases():
                 "kern_fuse_mm_scale",
                 "kern_fuse_softmax",
                 "kern_fuse_softmax_mm",
+                "kern_fuse_sdpa",
+            ),
+        ),
+        # The soft-capped twin — ``softmax(tanh(mm·s))·v``, the
+        # Gemma-2 bounded-logit spelling.  ``kern_fuse_sdpa_cap``
+        # folds the whole block to one ``kf_sdpa(cap=True)`` launch;
+        # the chain laws compete as the two-launch fallback.
+        (
+            "kernel_sdpa_cap",
+            "speed",
+            Op.make(
+                "matmul",
+                Op.make(
+                    "div",
+                    Op.make(
+                        "exp",
+                        Op.make(
+                            "tanh",
+                            Op.make(
+                                "mul",
+                                Op.make("matmul", x, w),
+                                Const(0.25),
+                            ),
+                        ),
+                    ),
+                    Op.make(
+                        "sum",
+                        Op.make(
+                            "exp",
+                            Op.make(
+                                "tanh",
+                                Op.make(
+                                    "mul",
+                                    Op.make("matmul", x, w),
+                                    Const(0.25),
+                                ),
+                            ),
+                        ),
+                        dim=-1,
+                        keepdim=True,
+                    ),
+                ),
+                w,
+            ),
+            (
+                "kern_fuse_mm_scale",
+                "kern_fuse_softmax",
+                "kern_fuse_softmax_mm",
+                "kern_fuse_sdpa_cap",
             ),
         ),
         (
@@ -278,6 +430,7 @@ def _cases():
             Op.make("add", Op.make("tanh", x), Op.make("cos", y)),
             (),
         ),
+        *_mk_decayed_cases(),
     )
 
 

@@ -1,7 +1,7 @@
 # ruff: noqa: RUF001, RUF002, RUF003 — math notation (≡, σ, −, ·) in docstrings.
 """The codegen law bank — schedule-level rewrites over the IR.
 
-Not a language: seventeen laws.  Fifteen fold spelled op-compositions
+Not a language: nineteen laws.  Seventeen fold spelled op-compositions
 into *named fused-kernel ops* (``FUSED_KERNEL_OPS`` — the kernel
 vocabulary the :class:`~mlopt_kernel.sink.KernelSink` lowers as one
 compiled composite, in the repo's ``silu``/``sdpa``/``rms_norm``
@@ -17,9 +17,12 @@ gate fusions (``kf_silu``, ``kf_softsign``, ``kf_addmul``,
 fuse into one pass (``kf_layernorm``, ``kf_rmsnorm`` — the gain-free
 spelling of ``rms_norm_fold_nogain``'s site), and the matmul
 epilogues a template kernel absorbs (``kf_mm_bias``,
-``kf_mm_scale``, ``kf_mm_sb``, ``kf_mm_gelu``).  Two deeper folds
+``kf_mm_scale``, ``kf_mm_sb``, ``kf_mm_gelu``).  Deeper folds
 reach toward real-module chains — ``kf_softmax_mm`` (the
-``softmax(qk)·v`` two-step attention chain) — and the
+``softmax(qk)·v`` two-step attention chain) and ``kf_sdpa`` (the
+whole ``softmax(mm·s)·v`` block, plain or ``tanh`` soft-capped,
+folded to a single launch — the un-folded-matmuls gap the last
+measured arm named) — plus the
 second-generation residue family the measured triton gap named:
 ``kf_addmul_tanh`` and ``kf_silu_sigmoid`` fold the pointwise op a
 first-generation fusion *left surviving* into the fused op itself.
@@ -67,6 +70,8 @@ __all__ = [
     "kern_fuse_mm_scale_bias",
     "kern_fuse_om_decayed",
     "kern_fuse_rmsnorm",
+    "kern_fuse_sdpa",
+    "kern_fuse_sdpa_cap",
     "kern_fuse_silu",
     "kern_fuse_silu_sigmoid",
     "kern_fuse_softmax",
@@ -92,6 +97,7 @@ FUSED_KERNEL_OPS = frozenset(
         "kf_addmul_tanh",
         "kf_softmax",
         "kf_softmax_mm",
+        "kf_sdpa",
         "kf_layernorm",
         "kf_rmsnorm",
         "kf_mm_bias",
@@ -218,6 +224,60 @@ kern_fuse_softmax_mm = R(
     "the post-softmax value matmul a spelled attention block "
     "launches separately (``softmax(qk)`` gains a ``kf_softmax`` "
     "member too; the deeper fold wins on launch count).",
+)
+
+
+# The whole attention block — the gap the last measured arm named.
+# ``kernel_sdpa`` extracted ``kf_softmax_mm(kf_mm_scale(q,k,s), v)``:
+# two launches with the scaled-score buffer materialised between
+# them.  ``kern_fuse_sdpa`` folds the spelled
+# ``matmul(softmax(mm·s), v)`` site whole — mm, scale, softmax and
+# the value matmul in one compiled composite — and
+# ``kern_fuse_sdpa_cap`` covers the soft-capped twin
+# (``softmax(tanh(mm·s))·v``, the Gemma-2 logit-cap spelling).  One
+# fused op, one ``cap`` attr; same keepdim/single-axis gate as the
+# softmax site, same ``dim`` unwrap.
+def _sdp_score() -> Op:
+    """``mul(matmul(a, w), s)`` — the scaled qk score, twice."""
+    return Op.make("mul", Op.make("matmul", "a", "w"), "s")
+
+
+def _sdp_site(score: Op) -> Op:
+    """``matmul(div(exp(score), Σexp(score)), v)`` — the chain site."""
+    return Op.make(
+        "matmul",
+        Op.make(
+            "div",
+            Op.make("exp", score),
+            Op.make(
+                "sum", Op.make("exp", score), dim="RD", keepdim="RK"
+            ),
+        ),
+        "v",
+    )
+
+
+kern_fuse_sdpa = R(
+    "kern_fuse_sdpa",
+    _sdp_site(_sdp_score()),
+    Op.make("kf_sdpa", "a", "w", "s", "v", dim="SD", cap=False),
+    cond=_COND_SOFTMAX_SITE,
+    dspec={"SD": ("attr0", "RD")},
+    law="Flash-style attention fold: matmul(softmax(mm·s), v) lowers "
+    "as one fused kernel — the qk matmul, scale, softmax and value "
+    "matmul in a single launch where the two-step fold left the "
+    "scaled-score buffer materialised between launches.",
+)
+
+kern_fuse_sdpa_cap = R(
+    "kern_fuse_sdpa_cap",
+    _sdp_site(Op.make("tanh", _sdp_score())),
+    Op.make("kf_sdpa", "a", "w", "s", "v", dim="SD", cap=True),
+    cond=_COND_SOFTMAX_SITE,
+    dspec={"SD": ("attr0", "RD")},
+    law="Soft-capped attention fold: matmul(softmax(tanh(mm·s)), v) "
+    "lowers as one fused kernel — the bounded-logit spelling "
+    "(Gemma-2 soft-capping) folded whole, cap flagging the tanh.",
 )
 
 
@@ -412,6 +472,8 @@ KERNEL_RULES: tuple[Rewrite, ...] = (
     kern_fuse_addmul_tanh,
     kern_fuse_softmax,
     kern_fuse_softmax_mm,
+    kern_fuse_sdpa,
+    kern_fuse_sdpa_cap,
     kern_fuse_layernorm,
     kern_fuse_rmsnorm,
     kern_fuse_mm_bias,

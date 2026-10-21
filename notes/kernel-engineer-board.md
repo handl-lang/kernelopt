@@ -200,6 +200,75 @@ Verdicts on this arm's picks:
    the missing piece is whatever carries cold-start exploration.
    Curriculum/useful-tier variants were not tried in this window.
 
+## 2026-10-21 (later): flash-style `kf_sdpa` + `om_decayed` cases — measured results
+
+Bank grew 17 → 19 laws.  Two folds for the named codegen gap — the
+un-folded matmuls around softmax — and four carrier-style measured
+cases for the `om_decayed` vocabulary.
+
+New laws (verify-first; same keepdim/single-axis gate + `dim` unwrap
+as the softmax site):
+
+| law | site → fused op | note |
+|---|---|---|
+| `kern_fuse_sdpa` | `matmul(softmax(mm·s), v)` → `kf_sdpa(a,w,s,v, cap=False)` | the whole attention block, one launch |
+| `kern_fuse_sdpa_cap` | `matmul(softmax(tanh(mm·s)), v)` → `kf_sdpa(…, cap=True)` | the Gemma-2 soft-cap spelling |
+
+`kernel_sdpa` now extracts `kf_sdpa(x,w,s,v)` — cost **12→1** (was
+`kf_softmax_mm(kf_mm_scale)` at 12→2).  New case `kernel_sdpa_cap`
+covers the bounded-logit twin (16→1).  New triton arms:
+`_triton_sdpa_cap` (mm·s → tanh-softmax → mm pipeline) and
+`_triton_decayed_mask` (`tril(σ(g)^(i−j))` per call + the batched
+`(s⊙d)@v`).
+
+Case table (22 cases, CUDA fp32, ~50 reps, median — new/changed rows
+in **bold**; the rest re-measured this run and drifted within the
+documented band):
+
+| case | cost | spelled µs | sched µs | speedup | triton µs (verified) |
+|---|---|---|---|---|---|
+| kernel_sdpa | **12→1** | 3615 | 2029 | **1.78×** | 2075 ✓ |
+| kernel_sdpa_cap (new) | 16→1 | 3911 | 2038 | **1.92×** | 2077 ✓ |
+| kernel_decayed | 2→1 | 75 | 91 | **0.83× — honest loss** | 81 ✓ |
+| kernel_decayed_mask (new) | 5→4 | 111 | 138 | **0.80× — loss** | 112 ✓ |
+| kernel_decayed_intra (new) | 6→5 | 108 | 146 | **0.74× — loss** | — skip |
+| kernel_decayed_pair (new) | 12→11 | 198 | 219 | **0.90× — loss** | — skip |
+| kernel_decayed_chunks (new) | 11→9 | 653 | 278 | **2.35× (see below)** | — skip |
+
+**Verdicts.**
+
+1. **`kf_sdpa` — PASS, and it flips the triton comparison.**  The
+   2-launch chain last arm *trailed* the 3-launch hand pipeline
+   (2137 vs 2087); the whole-block fold now *beats* it (2029 vs 2075;
+   capped 2038 vs 2077).  Both caps verify-equal and the keepdim
+   gate declines honestly.  The un-folded-matmuls gap is closed as
+   far as the compiled-composite sink reaches — a real flash/online-
+   softmax kernel is a schedule-level lowering, not another fold.
+2. **`om_decayed` measured cases — PASS on lowering, honest negative
+   on pay.**  All four carrier spellings lower and verify; all
+   measure **0.74–0.90×** — the fold removes one launch but adds a
+   per-op `torch.compile` dispatch premium that exceeds it at these
+   sizes.  A scale probe on `(s⊙d)@v` (16·128² → 128·512²) shows the
+   deficit shrinks to parity (0.80→0.88→0.99) and never inverts:
+   the masked-score materialisation the fold saves is bandwidth-
+   cheap next to a real GEMM — unlike the 4096×512 pure-pointwise
+   sites where fusion removes the dominant traffic.  `kernel_decayed`
+   itself straddles the band (0.80–1.17 across re-runs; the vocab
+   doc's 130→97 was a favourable draw).  `kernel_decayed_chunks`'
+   2.35× did not reproduce (0.67–0.79 on re-runs) — treat as
+   ~parity, variance-dominated.  This is the vocab doc's own caveat
+   measured row-by-row: **per-op compile dispatch beats the fusion
+   win on mm-adjacent ops** — the launch-counting cost model
+   over-prices this fold, and the real residual stays the
+   schedule-level chunked batching the audit already named.
+   (Case-design note: decay rates are live `sigmoid(g)` feeds — the
+   carrier parametrisation; a `Const` rate pins the mask generator
+   to CPU and crashes under CUDA feeds.)
+
+Prior caveat stands: the shipped `KERNEL_PLAYER_WEIGHTS` carries the
+new laws through `x:m`/`a:r:*` buckets untrained — a v3 prior retrain
+remains the open arm.
+
 2026-10-19, post-Lotufo.  The same machinery that plays law-discovery
 can play kernel engineering — a second domain, not a second system.
 
