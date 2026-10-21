@@ -269,6 +269,17 @@ wheels = [
 ]
 
 [[package]]
+name = "mlopt-carriers"
+version = "0.1.0.dev0"
+source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-carriers&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+dependencies = [
+    { name = "mlopt-core" },
+    { name = "mlopt-orchestrator" },
+    { name = "mlopt-torch" },
+    { name = "torch" },
+]
+
+[[package]]
 name = "mlopt-core"
 version = "0.1.0.dev0"
 source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-core&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
@@ -307,6 +318,9 @@ dev = [
     { name = "ruff" },
     { name = "ty" },
 ]
+probes = [
+    { name = "mlopt-carriers" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -324,6 +338,7 @@ dev = [
     { name = "ruff", specifier = ">=0.6" },
     { name = "ty", specifier = ">=0.0.84" },
 ]
+probes = [{ name = "mlopt-carriers", git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-carriers&branch=main" }]
 
 [[package]]
 name = "mlopt-orchestrator"

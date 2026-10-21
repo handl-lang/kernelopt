@@ -25,6 +25,12 @@ dev = [
     "ruff>=0.6",
     "ty>=0.0.84",
 ]
+# Measurement probes: ``bench/drivers/probes/kernel_vocab_probe.py``
+# lifts the retnet carrier through ``mlopt_carriers.om`` — opt-in so
+# the default env stays light; ``uv sync --group probes`` to run it.
+probes = [
+    "mlopt-carriers",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -38,6 +44,7 @@ where = ["src"]
 mlopt-core = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-core", branch = "main" }
 mlopt-torch = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
 mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
+mlopt-carriers = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
 gamekit = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/gamekit", branch = "main" }
 mlopt-discovery = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
 
