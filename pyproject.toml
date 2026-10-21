@@ -35,17 +35,19 @@ probes = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# --- substrate deps: git+ssh into the graphopt monorepo ------
+# --- substrate deps: git+ssh on the split repos --------------
+# plan 0032 phase 4: eqsat (substrate) / gamekit (game layer) /
+# graphopt (domain) are separate repos now.
 # kernelopt consumes the substrate as pinned git deps on per-package
 # subdirectories of handl-lang/graphopt — the phase-4 seam.
 # Pinned to the branch for now; move to a tag/rev once the upstream
 # surface settles.
 [tool.uv.sources]
-mlopt-core = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-core", branch = "main" }
+mlopt-core = { git = "ssh://git@github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", branch = "main" }
 mlopt-torch = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
-mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
+mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
 mlopt-carriers = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
-gamekit = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/gamekit", branch = "main" }
+gamekit = { git = "ssh://git@github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", branch = "main" }
 mlopt-discovery = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
 
 [tool.pytest.ini_options]
