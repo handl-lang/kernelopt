@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlopt-kernel"
+version = "0.1.0dev"
+description = "kernelopt (private): the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain.  Split out of handl-lang/research-mlopt (plan 0032 phase 4)."
+requires-python = ">=3.11"
+dependencies = [
+    "mlopt-core",
+    "mlopt-discovery",
+    "gamekit",
+    "torch>=2.0",
+]
+
+[project.optional-dependencies]
+# The hand-Triton field baseline (``bench.limits.triton``) — needs a
+# CUDA host to actually run; declines honestly without one.
+triton = ["triton>=3.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.6",
+    "ty>=0.0.84",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# --- substrate deps: git+ssh into the research-mlopt monorepo ------
+# kernelopt consumes the substrate as pinned git deps on per-package
+# subdirectories of handl-lang/research-mlopt — the phase-4 seam.
+# Pinned to the branch for now; move to a tag/rev once the upstream
+# surface settles.
+[tool.uv.sources]
+mlopt-core = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-core", branch = "main" }
+mlopt-torch = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
+mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
+gamekit = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/gamekit", branch = "main" }
+mlopt-discovery = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ty.environment]
+python-version = "3.13"
+extra-paths = ["src"]
+
+[tool.ty.src]
+include = ["src"]
+
+[tool.ty.terminal]
+error-on-warning = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 72
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "D"]
+ignore = [
+    "E501",     # line length — math/notation lines exceed 72 legitimately
+    "B008",     # function-call in default arg — used for cost-fn defaults
+    "SIM108",   # ternary suggestion — if/else often clearer here
+]
+
+# The docstring gate applies to shipped code only: tests and bench are
+# example/measurement code, not a public API surface.
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+"bench/**" = ["D"]
