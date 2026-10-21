@@ -1,9 +1,9 @@
 # kernelopt — **private**
 
 The codegen domain for the mlopt game layer, split out of
-[`handl-lang/research-mlopt`](https://github.com/handl-lang/research-mlopt)
+[`handl-lang/graphopt`](https://github.com/handl-lang/graphopt)
 (plan 0032 phase 4).  **This repo is private: nothing here may be
-referenced from research-mlopt's public docs or the paper.**
+referenced from graphopt's public docs or the paper.**
 
 Contents:
 
@@ -33,7 +33,7 @@ Contents:
 ## Wiring
 
 The substrate is consumed as **git+ssh deps on per-package
-subdirectories** of the (public) research-mlopt monorepo, pinned to
+subdirectories** of the (public) graphopt monorepo, pinned to
 `main` for now — see `[tool.uv.sources]` in `pyproject.toml`:
 
 | dep | source |

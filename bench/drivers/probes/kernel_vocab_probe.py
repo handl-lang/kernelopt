@@ -27,7 +27,7 @@ Run (needs the *parent* env — ``mlopt_carriers``/``mlopt_cuda`` are
 deliberately not kernelopt deps)::
 
     PYTHONPATH=/path/to/kernelopt/src \
-        /path/to/research-mlopt/.venv/bin/python \
+        /path/to/graphopt/.venv/bin/python \
         bench/drivers/probes/kernel_vocab_probe.py
 """
 

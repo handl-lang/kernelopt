@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mlopt-kernel"
 version = "0.1.0dev"
-description = "kernelopt (private): the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain.  Split out of handl-lang/research-mlopt (plan 0032 phase 4)."
+description = "kernelopt (private): the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain.  Split out of handl-lang/graphopt (plan 0032 phase 4)."
 requires-python = ">=3.11"
 dependencies = [
     "mlopt-core",
@@ -35,18 +35,18 @@ probes = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# --- substrate deps: git+ssh into the research-mlopt monorepo ------
+# --- substrate deps: git+ssh into the graphopt monorepo ------
 # kernelopt consumes the substrate as pinned git deps on per-package
-# subdirectories of handl-lang/research-mlopt — the phase-4 seam.
+# subdirectories of handl-lang/graphopt — the phase-4 seam.
 # Pinned to the branch for now; move to a tag/rev once the upstream
 # surface settles.
 [tool.uv.sources]
-mlopt-core = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-core", branch = "main" }
-mlopt-torch = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
-mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
-mlopt-carriers = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
-gamekit = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/gamekit", branch = "main" }
-mlopt-discovery = { git = "ssh://git@github.com/handl-lang/research-mlopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
+mlopt-core = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-core", branch = "main" }
+mlopt-torch = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
+mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
+mlopt-carriers = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
+gamekit = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/gamekit", branch = "main" }
+mlopt-discovery = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

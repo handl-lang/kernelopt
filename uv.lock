@@ -117,7 +117,7 @@ wheels = [
 [[package]]
 name = "gamekit"
 version = "0.1.0.dev0"
-source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fgamekit&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+source = { git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fgamekit&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
 
 [[package]]
 name = "iniconfig"
@@ -271,7 +271,7 @@ wheels = [
 [[package]]
 name = "mlopt-carriers"
 version = "0.1.0.dev0"
-source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-carriers&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+source = { git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-carriers&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
 dependencies = [
     { name = "mlopt-core" },
     { name = "mlopt-orchestrator" },
@@ -282,12 +282,12 @@ dependencies = [
 [[package]]
 name = "mlopt-core"
 version = "0.1.0.dev0"
-source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-core&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+source = { git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-core&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
 
 [[package]]
 name = "mlopt-discovery"
 version = "0.1.0.dev0"
-source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-discovery&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+source = { git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-discovery&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
 dependencies = [
     { name = "gamekit" },
     { name = "mlopt-core" },
@@ -324,9 +324,9 @@ probes = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gamekit", git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fgamekit&branch=main" },
-    { name = "mlopt-core", git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-core&branch=main" },
-    { name = "mlopt-discovery", git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-discovery&branch=main" },
+    { name = "gamekit", git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fgamekit&branch=main" },
+    { name = "mlopt-core", git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-core&branch=main" },
+    { name = "mlopt-discovery", git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-discovery&branch=main" },
     { name = "torch", specifier = ">=2.0" },
     { name = "triton", marker = "extra == 'triton'", specifier = ">=3.0" },
 ]
@@ -338,12 +338,12 @@ dev = [
     { name = "ruff", specifier = ">=0.6" },
     { name = "ty", specifier = ">=0.0.84" },
 ]
-probes = [{ name = "mlopt-carriers", git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-carriers&branch=main" }]
+probes = [{ name = "mlopt-carriers", git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-carriers&branch=main" }]
 
 [[package]]
 name = "mlopt-orchestrator"
 version = "0.1.0.dev0"
-source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-orchestrator&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+source = { git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-orchestrator&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
 dependencies = [
     { name = "mlopt-core" },
 ]
@@ -351,7 +351,7 @@ dependencies = [
 [[package]]
 name = "mlopt-torch"
 version = "0.1.0.dev0"
-source = { git = "ssh://git@github.com/handl-lang/research-mlopt.git?subdirectory=packages%2Fmlopt-torch&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
+source = { git = "ssh://git@github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-torch&branch=main#fb00089280b7656975f72ce61b2ea676f67ae2f8" }
 dependencies = [
     { name = "mlopt-core" },
     { name = "mlopt-orchestrator" },

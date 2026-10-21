@@ -1,7 +1,7 @@
 # Agent guide — kernelopt (PRIVATE)
 
 The codegen domain for the mlopt game layer — a **private** repo,
-split out of `handl-lang/research-mlopt` (plan 0032 phase 4).
+split out of `handl-lang/graphopt` (plan 0032 phase 4).
 Nothing in this repo may leak into the parent's public docs/paper.
 
 ## Layout
@@ -33,7 +33,7 @@ Nothing in this repo may leak into the parent's public docs/paper.
 
 ## Substrate deps
 
-uv git+ssh deps on `handl-lang/research-mlopt` subdirectories, pinned
+uv git+ssh deps on `handl-lang/graphopt` subdirectories, pinned
 to `main` (`[tool.uv.sources]`): `mlopt-core`, `mlopt-torch`,
 `mlopt-orchestrator`, `gamekit`, `mlopt-discovery`.  Bump the pin
 deliberately — upstream `spec_domain`/`register_player` are the
