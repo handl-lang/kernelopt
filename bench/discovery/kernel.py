@@ -1,6 +1,6 @@
 """The kernelopt spike's bench cases — measured codegen pay.
 
-Twenty-eight kernel cases: a spelled program, a codegen-law candidate, and
+Twenty-nine kernel cases: a spelled program, a codegen-law candidate, and
 the honest row — lower both through
 :class:`mlopt_kernel.KernelSink`, verify numerically (verify-first),
 then time spelled vs scheduled.  Where the case has a registered
@@ -150,6 +150,104 @@ def _mk_decayed_cases():
             "speed",
             Op.make("add", chunk(0), chunk(1)),
             ("kern_fuse_om_decayed",),
+        ),
+        # The chunked-scan schedule — a ``concat`` of two chunk arms
+        # (intra element per arm + a decay-gated cross pair product on
+        # arm 1), the retnet carrier's extraction shape.  The spelled
+        # tape launches every piece per chunk; ``kern_fuse_chunk_scan``
+        # folds the concat to one scheduled ``om_chunk_scan`` block.
+        (
+            "kernel_chunk_scan",
+            "speed",
+            Op.make(
+                "concat",
+                Op.make(
+                    "matmul",
+                    Op.make(
+                        "mul",
+                        Op.make(
+                            "split",
+                            sc,
+                            sizes=(64, 64),
+                            dim=1,
+                            index=0,
+                        ),
+                        chunk_decay,
+                    ),
+                    Op.make(
+                        "split", vc, sizes=(64, 64), dim=1, index=0
+                    ),
+                ),
+                Op.make(
+                    "add",
+                    Op.make(
+                        "matmul",
+                        Op.make(
+                            "mul",
+                            Op.make(
+                                "split",
+                                sc,
+                                sizes=(64, 64),
+                                dim=1,
+                                index=1,
+                            ),
+                            chunk_decay,
+                        ),
+                        Op.make(
+                            "split",
+                            vc,
+                            sizes=(64, 64),
+                            dim=1,
+                            index=1,
+                        ),
+                    ),
+                    Op.make(
+                        "mul",
+                        Op.make(
+                            "unsqueeze",
+                            Op.make(
+                                "decay_vec",
+                                Op.make("sigmoid", gc),
+                                t=64,
+                            ),
+                            dim=-1,
+                        ),
+                        Op.make(
+                            "div",
+                            Op.make(
+                                "matmul",
+                                Op.make(
+                                    "split",
+                                    sc,
+                                    sizes=(64, 64),
+                                    dim=1,
+                                    index=1,
+                                ),
+                                Op.make(
+                                    "matmul",
+                                    Op.make(
+                                        "split",
+                                        sc,
+                                        sizes=(64, 64),
+                                        dim=1,
+                                        index=0,
+                                    ),
+                                    Op.make(
+                                        "split",
+                                        vc,
+                                        sizes=(64, 64),
+                                        dim=1,
+                                        index=0,
+                                    ),
+                                ),
+                            ),
+                            Const(2),
+                        ),
+                    ),
+                ),
+                dim=-2,
+            ),
+            ("kern_fuse_chunk_scan",),
         ),
     )
 

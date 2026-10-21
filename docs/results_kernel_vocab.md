@@ -1,5 +1,8 @@
 # Kernel vocabulary — closing the sink's op-table gap
 
+> Followed up by `docs/results_chunk_scan.md` — the schedule half of
+> the residual this doc names (`om_chunk_scan` + `kern_fuse_chunk_scan`).
+
 Follow-up to `docs/results_kernel_check.md` §4, which found the
 extracted retnet carrier structurally unlowerable through
 `KernelSink`: 8 of its 14 ops were outside `supported_ops`

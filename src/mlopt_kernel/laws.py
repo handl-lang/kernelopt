@@ -1,11 +1,15 @@
 # ruff: noqa: RUF001, RUF002, RUF003 — math notation (≡, σ, −, ·) in docstrings.
 """The codegen law bank — schedule-level rewrites over the IR.
 
-Not a language: twenty-one laws.  Nineteen fold spelled op-compositions
-into *named fused-kernel ops* (``FUSED_KERNEL_OPS`` — the kernel
-vocabulary the :class:`~mlopt_kernel.sink.KernelSink` lowers as one
-compiled composite, in the repo's ``silu``/``sdpa``/``rms_norm``
-fold-op tradition); two are arithmetic strength reductions — the
+Not a language: twenty-six laws.  Nineteen fold spelled
+op-compositions into *named fused-kernel ops* (``FUSED_KERNEL_OPS``
+— the kernel vocabulary the
+:class:`~mlopt_kernel.sink.KernelSink` lowers as one compiled
+composite, in the repo's ``silu``/``sdpa``/``rms_norm`` fold-op
+tradition); five fold ``concat``-of-chunks spellings into the
+scheduled ``om_chunk_scan`` marker (``SCHEDULED_KERNEL_OPS`` — a
+batched plan, not a per-op tape); two are arithmetic strength
+reductions — the
 codegen move that replaces an expensive elementary op with the cheap
 one a device kernel emits anyway.
 
@@ -31,12 +35,14 @@ strength reductions expose: the two-product sum ``a·b + c·d``
 (``x·x + y·¼`` — the ``kernel_strength`` second launch) and the
 left-nested triple product ``(a·b)·c`` (the ``pow(x,2)·w`` spelling
 after ``kern_square_strength``).
-The newest fold reaches outside the ``kf_*`` family:
+The newest folds reach outside the ``kf_*`` family:
 ``kern_fuse_om_decayed`` mints ``om_decayed`` — the decayed
 carrier's masked score matmul — from the spelled
-``matmul(mul(s, d), v)`` site, the fused decayed-attention element
-the retnet-class carriers extract (the measured ~1.6×-to-FLA
-residual's vocabulary).
+``matmul(mul(s, d), v)`` site, and the ``kern_fuse_chunk_scan``
+family mints ``om_chunk_scan`` — the schedule-level marker over a
+``concat``-of-chunks site — the fused decayed-attention element and
+the chunked-scan schedule the retnet-class carriers extract (the
+measured ~1.6×-to-FLA residual's vocabulary *and* its schedule).
 Side conditions are *data* where the repo's ``cond``/``dspec`` DSL
 reaches (attr metavariables, numeric consts) — the same posture the
 default bank took when ``softmax_fold`` / ``rms_norm_fold`` went
@@ -62,13 +68,18 @@ from mlopt_core.egraph import Rewrite
 from mlopt_core.ir import Const, Op
 from mlopt_core.laws.base import R
 
+from mlopt_kernel.scan import is_chunk_scan
+
 __all__ = [
     "FUSED_KERNEL_OPS",
     "KERNEL_RULES",
+    "SCHEDULED_KERNEL_OPS",
     "kern_div_recip",
     "kern_fuse_addmul",
     "kern_fuse_addmul2",
     "kern_fuse_addmul_tanh",
+    "kern_fuse_chunk_scan",
+    "kern_fuse_chunk_scan_family",
     "kern_fuse_layernorm",
     "kern_fuse_mm_bias",
     "kern_fuse_mm_gelu",
@@ -116,6 +127,15 @@ FUSED_KERNEL_OPS = frozenset(
         "om_decayed",
     }
 )
+
+#: The schedule-level ops — not compiled composites but *schedule
+#: boundaries*: the executor routes them to a batched plan instead
+#: of the per-op dispatch tape.  ``om_chunk_scan`` is the chunked
+#: decayed-scan marker ``kern_fuse_chunk_scan`` mints over a
+#: ``concat``-of-chunks site; its body in the binding table is the
+#: spelled ``cat`` (the verify-first fallback), while the
+#: ``compile_fused`` path runs :class:`mlopt_kernel.scan.ScanRunner`.
+SCHEDULED_KERNEL_OPS = frozenset({"om_chunk_scan"})
 
 kern_fuse_silu = R(
     "kern_fuse_silu",
@@ -461,6 +481,66 @@ kern_fuse_om_decayed = R(
     "om_decayed fold; the measured FLA-residual class).",
 )
 
+
+# The chunked decayed-scan fold — the schedule-level move the FLA
+# residual named.  A chunked decayed carrier extracts as a
+# ``concat(dim)`` over per-chunk sums — each arm one masked
+# intra-chunk ``om_decayed`` element plus a decay-gated pair product
+# ``row ⊙ (q @ (A @ v)) / S`` per earlier block.  The per-op tape
+# launches every piece per chunk; ``om_chunk_scan`` marks the concat
+# as *one scheduled block* the executor lowers to the pairwise-batched
+# forward (:mod:`mlopt_kernel.scan` — the ChunkedDecayModule schedule,
+# vendored carrier-free).
+#
+# Concat is variadic in the IR while a rewrite pattern is fixed-arity,
+# so the law is a family — ``kern_fuse_chunk_scan`` (the binary member;
+# the extracted carrier spells the concat as a nested binary tree, so
+# this one does the work — each minted ``om_chunk_scan`` flattens
+# again at the next level up until the whole concat spine is marked)
+# and ``kern_fuse_chunk_scan_{n}`` for the 3–6-ary spellings (the
+# ``concat_binarize_{n}`` precedent).  The check is the full plan
+# parse: every flattened arm must carry exactly one decayed intra
+# element (``om_decayed`` *or* its spelled ``matmul(mul(s,d),v)``
+# site) plus decay-gated cross products, under uniform concrete
+# chunk shapes.  A concat that fails the parse keeps its spelled
+# evaluation — the marker is never minted on a non-scan.
+def _chunk_scan_site(names: list) -> Any:
+    """Build the check closing over the pattern's arm metavars."""
+
+    def check(bound: dict) -> bool:
+        return is_chunk_scan(
+            [bound[n] for n in names], bound.get("$attr:D")
+        )
+
+    return check
+
+
+def _chunk_scan_law(n: int) -> Rewrite:
+    """``concat(x₁..xₙ, dim) → om_chunk_scan(x₁..xₙ, dim)`` — arity n."""
+    xs = [f"x{i}" for i in range(n)]
+    return R(
+        "kern_fuse_chunk_scan"
+        if n == 2
+        else f"kern_fuse_chunk_scan_{n}",
+        Op.make("concat", *xs, dim="D"),
+        Op.make("om_chunk_scan", *xs, dim="D"),
+        check=_chunk_scan_site(xs),
+        law="Chunked-scan fold: a concat of per-chunk decayed sums "
+        "lowers as ONE scheduled block — the pairwise-batched "
+        "chunk loop (batched score/state/pair GEMMs + segment-sum "
+        "accumulation) where the spelled program dispatched every "
+        "chunk's pieces separately (the measured FLA-residual "
+        "schedule).",
+    )
+
+
+#: The family, binary-first — the extracted carrier's nested-binary
+#: concat spelling plus the flat 3–6-ary roots other carriers emit.
+kern_fuse_chunk_scan_family: tuple[Rewrite, ...] = tuple(
+    _chunk_scan_law(n) for n in range(2, 7)
+)
+kern_fuse_chunk_scan = kern_fuse_chunk_scan_family[0]
+
 kern_square_strength = R(
     "kern_square_strength",
     Op.make("pow", "x", Const(2)),
@@ -522,6 +602,7 @@ KERNEL_RULES: tuple[Rewrite, ...] = (
     kern_fuse_mm_scale_bias,
     kern_fuse_mm_gelu,
     kern_fuse_om_decayed,
+    *kern_fuse_chunk_scan_family,
     kern_square_strength,
     kern_div_recip,
 )

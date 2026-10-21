@@ -22,7 +22,7 @@ from typing import Any
 
 from mlopt_core.ir import Op
 
-from mlopt_kernel.laws import FUSED_KERNEL_OPS
+from mlopt_kernel.laws import FUSED_KERNEL_OPS, SCHEDULED_KERNEL_OPS
 
 __all__ = ["kernel_cost"]
 
@@ -68,6 +68,14 @@ _VIEW_OPS = frozenset(
     }
 )
 
+#: Zero-launch schedule markers — ``om_chunk_scan`` emits no kernel
+#: of its own: the node marks a schedule boundary whose launches are
+#: the batched GEMMs billed at its arm operands (and priced by their
+#: subtrees).  Below the ``concat`` it replaces (a materialising
+#: copy, one launch), so a marked concat spine strictly wins per
+#: node — the nested-binary fold extracts whole, not piecemeal.
+_ZERO_OPS = _VIEW_OPS | SCHEDULED_KERNEL_OPS
+
 
 def kernel_cost(term: Any, memo: dict | None = None) -> float:
     """Cost = launches + op weights; a fused op is one launch.
@@ -83,7 +91,7 @@ def kernel_cost(term: Any, memo: dict | None = None) -> float:
     if isinstance(term, Op):
         w = (
             0.0
-            if term.op in _VIEW_OPS
+            if term.op in _ZERO_OPS
             else _LAUNCH
             if term.op in FUSED_KERNEL_OPS
             else _OP_WEIGHT.get(term.op, _LAUNCH)

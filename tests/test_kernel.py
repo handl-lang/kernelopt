@@ -83,7 +83,7 @@ def _rmsnorm_term(eps=Const(1e-6), power=Const(2), keepdim=True):
 
 class TestLaws:
     def test_bank_shape(self):
-        """Twenty-one codegen laws; the fused ops take leaf children."""
+        """Twenty-six codegen laws; the fused ops take leaf children."""
         assert [r.name for r in KERNEL_RULES] == [
             "kern_fuse_silu",
             "kern_fuse_softsign",
@@ -104,6 +104,11 @@ class TestLaws:
             "kern_fuse_mm_scale_bias",
             "kern_fuse_mm_gelu",
             "kern_fuse_om_decayed",
+            "kern_fuse_chunk_scan",
+            "kern_fuse_chunk_scan_3",
+            "kern_fuse_chunk_scan_4",
+            "kern_fuse_chunk_scan_5",
+            "kern_fuse_chunk_scan_6",
             "kern_square_strength",
             "kern_div_recip",
         ]
@@ -476,6 +481,186 @@ class TestLaws:
         assert kernel_cost(best) == 1.0  # one launch, like kf_*
         cert = eg.certificate(t, best)
         verify_certificate(t, cert)
+
+
+def _chunk_vars(n: int, b: int = 4, c: int = 8, dv: int = 6):
+    """Per-chunk (s, d, v) leaves + a shared cross table — shapes OK."""
+    vs = {
+        "s": [Var(f"s{i}", TensorType((b, c, c))) for i in range(n)],
+        "d": [Var(f"d{i}", TensorType((c, c))) for i in range(n)],
+        "v": [Var(f"v{i}", TensorType((b, c, dv))) for i in range(n)],
+        "q": [Var(f"q{i}", TensorType((b, c, c))) for i in range(n)],
+        "a": [Var(f"a{i}", TensorType((b, c, c))) for i in range(n)],
+        "g": Var("g", TensorType(())),
+    }
+    return vs
+
+
+def _scan_arm(vs: dict, i: int, *, spelled: bool = False):
+    """Chunk arm *i*: intra element + one decay-gated cross per j<i.
+
+    ``spelled=True`` writes the intra as ``matmul(mul(s,d),v)`` — the
+    site ``kern_fuse_om_decayed`` folds — exercising the classifier's
+    both-spellings coverage.
+    """
+    intra = (
+        Op.make(
+            "matmul", Op.make("mul", vs["s"][i], vs["d"][i]), vs["v"][i]
+        )
+        if spelled
+        else Op.make("om_decayed", vs["s"][i], vs["d"][i], vs["v"][i])
+    )
+    terms = [Op.make("div", intra, Const(0.5))]
+    for j in range(i):
+        row = Op.make(
+            "unsqueeze",
+            Op.make("decay_vec", vs["g"], t=8),
+            dim=-1,
+        )
+        terms.append(
+            Op.make(
+                "mul",
+                row,
+                Op.make(
+                    "div",
+                    Op.make(
+                        "matmul",
+                        vs["q"][i],
+                        Op.make("matmul", vs["a"][j], vs["v"][j]),
+                    ),
+                    Const(0.5),
+                ),
+            )
+        )
+    arm = terms[0]
+    for s in terms[1:]:
+        arm = Op.make("add", arm, s)
+    return arm
+
+
+def _scan_term(n: int, dim: int = -2, *, spelled: bool = False):
+    """``concat`` of *n* chunk arms — right-nested binary, dim=-2."""
+    vs = _chunk_vars(n)
+    arms = [_scan_arm(vs, i, spelled=spelled) for i in range(n)]
+    t = arms[-1]
+    for a in reversed(arms[:-1]):
+        t = Op.make("concat", a, t, dim=dim)
+    return t, vs
+
+
+class TestChunkScan:
+    def test_fires_and_extracts(self):
+        """The concat-of-chunks folds to a root ``om_chunk_scan``."""
+        t, _vs = _scan_term(2)
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert eg.apply_rule(_rule("kern_fuse_chunk_scan"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "om_chunk_scan"
+        # the marker is a schedule boundary — below the concat's launch
+        assert kernel_cost(best) < kernel_cost(t)
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_nested_binary_folds_whole_spine(self):
+        """A nested concat tree extracts as nested scans, one plan."""
+        t, _vs = _scan_term(3)
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert eg.apply_rule(_rule("kern_fuse_chunk_scan"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "om_chunk_scan"
+        # the inner concat gained a scan member too — the nested spine
+        assert best.args[1].op == "om_chunk_scan"
+
+    def test_nary_concat_fires(self):
+        """The flat n-ary concat spelling folds via the family."""
+        vs = _chunk_vars(3)
+        t = Op.make(
+            "concat",
+            _scan_arm(vs, 0),
+            _scan_arm(vs, 1),
+            _scan_arm(vs, 2),
+            dim=-2,
+        )
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert eg.apply_rule(_rule("kern_fuse_chunk_scan_3"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "om_chunk_scan"
+        assert len(best.args) == 3
+
+    def test_declines_plain_concat(self):
+        """A concat of non-scan arms never mints the marker."""
+        eg = EGraph()
+        root = eg.add_term(Op.make("concat", X, Y, dim=0))
+        for r in KERNEL_RULES:
+            if r.name.startswith("kern_fuse_chunk_scan"):
+                assert not eg.apply_rule(r, root)
+
+    def test_declines_mixed_arms(self):
+        """One bad arm in the concat vetoes the whole fold."""
+        t, _vs = _scan_term(2)
+        t2 = Op.make("concat", t.args[0], X, dim=-2)
+        eg = EGraph()
+        root = eg.add_term(t2)
+        assert not eg.apply_rule(_rule("kern_fuse_chunk_scan"), root)
+
+    def test_spelled_intra_parses(self):
+        """``matmul(mul(s,d),v)`` intra arms schedule without the fold."""
+        t, _vs = _scan_term(2, spelled=True)
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert eg.apply_rule(_rule("kern_fuse_chunk_scan"), root)
+
+    def test_verify_scheduled_and_eager(self):
+        """Scheduled and spelled-cat paths both verify vs the site."""
+        torch.manual_seed(0)
+        t, vs = _scan_term(2)
+        eg = EGraph()
+        root = eg.add_term(t)
+        eg.apply_rule(_rule("kern_fuse_chunk_scan"), root)
+        best = eg.extract_best(root, kernel_cost)
+        leaves = sorted(
+            {v.name: v for v in _all_vars(t)}.values(),
+            key=lambda v: v.name,
+        )
+        ir_s = IR(
+            root=t,
+            inputs=leaves,
+            input_names={v.name for v in leaves},
+        )
+        ir_f = IR(
+            root=best, inputs=leaves, input_names=ir_s.input_names
+        )
+        feeds = tuple(
+            torch.randn(tuple(v.typ.shape), dtype=torch.float64)
+            for v in leaves
+        )
+        sink = KernelSink()
+        rep = sink.verify(sink.lower(ir_s), sink.lower(ir_f), feeds)
+        assert rep.passed and rep.max_abs < 1e-9
+        eager = KernelSink(compile_fused=False)
+        rep_e = eager.verify(sink.lower(ir_s), eager.lower(ir_f), feeds)
+        assert rep_e.passed and rep_e.max_abs < 1e-9
+
+    def test_supported_op_and_cost_zero(self):
+        """``om_chunk_scan`` lowers and prices as a schedule marker."""
+        assert "om_chunk_scan" in KernelSink().supported_ops
+        assert kernel_cost(Op.make("om_chunk_scan", X, Y, dim=0)) == 0.0
+
+
+def _all_vars(term):
+    """DFS the term's Var leaves (dedup by name)."""
+    seen: dict[str, Var] = {}
+    stack = [term]
+    while stack:
+        t = stack.pop()
+        if isinstance(t, Var):
+            seen[t.name] = t
+        elif isinstance(t, Op):
+            stack.extend(t.args)
+    return list(seen.values())
 
 
 class TestCost:

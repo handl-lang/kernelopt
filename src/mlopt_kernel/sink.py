@@ -32,7 +32,8 @@ from mlopt_core.ir import Const, Op, Param, Var
 from mlopt_core.ops import OpTable
 from mlopt_core.ports import ExecutorSpec, OpRegistry
 
-from mlopt_kernel.laws import FUSED_KERNEL_OPS
+from mlopt_kernel.laws import FUSED_KERNEL_OPS, SCHEDULED_KERNEL_OPS
+from mlopt_kernel.scan import ScanRunner, build_scan_plan
 
 if TYPE_CHECKING:
     from mlopt_core.ir import IR
@@ -219,6 +220,13 @@ def _bindings() -> dict[str, Any]:
         "mul": torch.mul,
         "neg": torch.neg,
         "om_decayed": _om_decayed,
+        # The scheduled-op spelled body: ``om_chunk_scan`` *is* the
+        # concat of its arms — the verify-first fallback (and what a
+        # non-plan node lowers to); the scheduled path lives in the
+        # executor's ScanRunner dispatch, not in this table.
+        "om_chunk_scan": lambda *ts, dim=0: torch.cat(
+            list(ts), dim=int(dim)
+        ),
         "permute": lambda x, dims: x.permute(*dims),
         "pow": torch.pow,
         "reciprocal": torch.reciprocal,
@@ -310,6 +318,9 @@ class KernelVerifyReport:
     passed: bool
 
 
+_MISSING = object()
+
+
 class KernelExecutor:
     """The lowered artifact — a callable executor over an IR term.
 
@@ -329,6 +340,21 @@ class KernelExecutor:
     entirely — the same schedule choice the carrier executor's
     ``_const`` cache makes, and the difference between a sink that
     materialises its constants per forward and one that does not.
+
+    *Per-forward memo*: a live op's value is cached for the call's
+    duration (``_memo``, reset in :meth:`forward`), so a DAG-shared
+    subterm — the retnet carrier's shared q/k/v projections feeding
+    every chunk's ``split`` — evaluates once per forward, not once
+    per use.
+
+    *Scheduled ops* (``SCHEDULED_KERNEL_OPS``): ``om_chunk_scan``
+    marks a ``concat``-of-chunks the laws folded.  Under
+    ``compile_fused`` the node dispatches to a
+    :class:`~mlopt_kernel.scan.ScanRunner` — the pairwise-batched
+    chunk schedule (batched GEMMs + segment sums) instead of the
+    per-op dispatch tape; when the term doesn't re-parse as a scan
+    the node falls back to its spelled ``cat`` body — never a silent
+    drop.  ``compile_fused=False`` always runs the spelled body.
     """
 
     def __init__(
@@ -350,6 +376,8 @@ class KernelExecutor:
         self._live: dict[int, bool] = {}
         self._mark_live(ir.root)
         self._static: dict[int, Any] = {}
+        self._memo: dict[int, Any] = {}
+        self._scans: dict[int, Any] = {}
 
     def forward(self, *xs: Any) -> Any:
         """Run the program on positional inputs in ``ir.inputs`` order."""
@@ -360,6 +388,7 @@ class KernelExecutor:
                 for v, x in zip(self._ir.inputs, xs, strict=True)
             }
         )
+        self._memo = {}
         return self._eval(self._ir.root, env)
 
     def __call__(self, *xs: Any) -> Any:
@@ -398,8 +427,26 @@ class KernelExecutor:
             self._compiled[op] = fn
         return fn
 
+    def _scheduled(self, t: Op, env: dict) -> Any:
+        """Run *t* through its batched plan (or the spelled fallback)."""
+        key = id(t)
+        runner = self._scans.get(key, _MISSING)
+        if runner is _MISSING:
+            plan = build_scan_plan(t)
+            runner = None if plan is None else ScanRunner(plan)
+            self._scans[key] = runner
+        if runner is not None:
+            return runner.run(lambda u: self._eval(u, env))
+        # Not a scan after all — the spelled ``cat`` body, honestly.
+        fn = self._bindings[t.op]
+        return fn(
+            *[self._eval(a, env) for a in t.args], **dict(t.attrs)
+        )
+
     def _apply(self, t: Op, env: dict) -> Any:
         """Dispatch one op node — fused ops through the compiled path."""
+        if t.op in SCHEDULED_KERNEL_OPS and self.compile_fused:
+            return self._scheduled(t, env)
         fn = (
             self._fused(t.op)
             if t.op in FUSED_KERNEL_OPS
@@ -420,7 +467,11 @@ class KernelExecutor:
             return self._leaf(t, env)
         k = id(t)
         if self._live.get(k, True):
-            return self._apply(t, env)
+            hit = self._memo.get(k, _MISSING)
+            if hit is _MISSING:
+                hit = self._apply(t, env)
+                self._memo[k] = hit
+            return hit
         if k not in self._static:
             self._static[k] = self._apply(t, env)
         return self._static[k]

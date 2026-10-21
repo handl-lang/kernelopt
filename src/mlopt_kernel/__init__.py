@@ -14,7 +14,11 @@ language), a :class:`~mlopt_kernel.sink.KernelSink` implementing the
 
 from mlopt_kernel.board import KernelBoard, KernelReport, KernelState
 from mlopt_kernel.cost import kernel_cost
-from mlopt_kernel.laws import FUSED_KERNEL_OPS, KERNEL_RULES
+from mlopt_kernel.laws import (
+    FUSED_KERNEL_OPS,
+    KERNEL_RULES,
+    SCHEDULED_KERNEL_OPS,
+)
 from mlopt_kernel.sink import (
     KernelExecutor,
     KernelSink,
@@ -24,6 +28,7 @@ from mlopt_kernel.sink import (
 __all__ = [
     "FUSED_KERNEL_OPS",
     "KERNEL_RULES",
+    "SCHEDULED_KERNEL_OPS",
     "KernelBoard",
     "KernelExecutor",
     "KernelReport",
