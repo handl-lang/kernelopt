@@ -7,3 +7,4 @@ __pycache__/
 .ty_cache/
 dist/
 build/
+bench/results/
