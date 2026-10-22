@@ -6,8 +6,9 @@ carries a replayable certificate on a real instance), paying (a
 registered ``bench.discovery.kernel`` case's certified extraction
 under the full kernel bank lands strictly below the best the rest of
 the bank reaches — *and* the derivation uses the candidate), and
-underivable (the kernel bank plus the shared substrate surface —
-minus the candidate's alpha-siblings — does not already prove it).
+underivable (the kernel bank plus the kernel prior-art bank plus the
+shared substrate surface — minus the candidate's alpha-siblings —
+does not already prove it).
 
 These tests pin the gate semantics on laws whose answers are known a
 priori:
@@ -15,15 +16,19 @@ priori:
 * the shipped ``kern_square_strength`` demotes to ``known`` — the
   substrate bank proves ``pow(x,2) → x·x`` via the very
   ``pow_to_square`` + ``square_expand`` derivation the law declares;
+* ``kern_fuse_chunk_scan_3`` demotes to ``known`` — the prior-art
+  denotation ``pa_om_chunk_scan_expand_3`` (a scheduled scan block
+  IS its spelled concat) proves the fold instance directly;
 * a fused-op mint (``mul(a,b) → kf_sieve``) is underivable by
-  construction — no premise emits the kernel vocabulary — and reaches
-  ``review`` off a stubbed measured win;
+  construction — no premise emits the (unbound) ``kf_sieve`` op —
+  and reaches ``review`` off a stubbed measured win;
 * a false codegen law (``mul(x,x) → add(x,x)``) is refuted by the
   fp64 ``KernelSink`` oracle before the gates even run;
 * a rule whose guard accepts nothing reports ``no-instance``;
 * the real measured gate runs: ``kern_fuse_silu`` beats its own
-  case's floor, and ``kern_fuse_chunk_scan_3`` — a law no registered
-  case exercises — reports ``unmeasured``, not ``unpaid``.
+  case's floor against the bank=``KERNEL_RULES`` floor, and
+  ``kern_fuse_addmul`` reports ``unpaid`` — its sites are absorbed
+  by the gen-2 residue folds.
 
 The cert/derivability gates run on the real machinery —
 ``verify_law``, ``alpha_key``, the real bank.  The measured gate is
@@ -237,8 +242,11 @@ class TestMeasuredGateReal:
         )
         assert win.beat and win.verified and win.used
 
-    def test_chunk_scan_nary_is_unmeasured(self, bank, ctxs):
-        """The flat-3 member: xcorpus instance, no registered case."""
+    def test_chunk_scan_nary_is_known(self, bank, ctxs):
+        """The flat-3 member: the chunk-scan denotation bridge makes
+        the fold a theorem of the bank (``pa_om_chunk_scan_expand_3``
+        — a scheduled ``om_chunk_scan`` IS the concat it schedules),
+        so it demotes to ``known`` before the beat gate runs."""
         row = ns.sieve(
             _rule("kern_fuse_chunk_scan_3"),
             bank,
@@ -246,9 +254,9 @@ class TestMeasuredGateReal:
             measure=True,
         )
         assert row.instance_src == "corpus:xcorpus:scan_3"
-        assert row.cert and row.derivable is False
-        assert row.beat is None
-        assert row.verdict == "unmeasured"
+        assert row.cert and row.derivable is True
+        assert "pa_om_chunk_scan_expand_3" in row.witness_rules
+        assert row.verdict == "known"
 
     def test_addmul_is_unpaid_against_residue_folds(self, ctxs):
         """``kern_fuse_addmul`` never uniquely wins — its sites are

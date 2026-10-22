@@ -23,20 +23,25 @@ The codegen port of graphopt's
    and every alpha-sibling (same ``(lhs, rhs)`` under metavariable
    renaming, keyed by ``laws.serialize.alpha_key``) — removed.
 
-The known bank is the kernel bank plus the **shared substrate
-surface**: ``default_rules()`` + ``ALL_RULES_WITH_LAYOUT`` +
-``ATTENTION_RULES`` + the scan monoids + the prior-art
-``FUSION``/``CATEGORICAL`` slice — the same widest floor the upstream
-sieve saturates against, minus the ``EXPANSIVE`` rules that explode
-its bounded e-graph.  The substrate premises belong because the two
-banks rewrite the *same* IR: a codegen law the tensor bank already
-proves is genuinely known — ``kern_square_strength`` self-declares
+The known bank is the kernel bank plus the **kernel prior-art
+bank** (``KERNEL_PRIOR_ART_RULES`` — the codegen vocabulary:
+fused-kernel denotations, tiling distributions, GEMM operand folds,
+strength reductions) plus the **shared substrate surface**:
+``default_rules()`` + ``ALL_RULES_WITH_LAYOUT`` + ``ATTENTION_RULES``
++ the scan monoids + the prior-art ``FUSION``/``CATEGORICAL`` slice —
+the same widest floor the upstream sieve saturates against, minus
+the ``EXPANSIVE`` rules that explode its bounded e-graph.  The
+substrate premises belong because the two banks rewrite the *same*
+IR: a codegen law the tensor bank already proves is genuinely known
+— ``kern_square_strength`` self-declares
 ``("pow_to_square", "square_expand")`` and demotes to ``known``
 against this bank, exactly as it should.  What the substrate bank
 cannot do is mint a ``kf_*``/``om_*`` op — no tensor rule emits the
 kernel vocabulary — so the fused-op and scheduled-scan folds are
-underivable by construction here; the sieve *measures* that claim
-rather than asserting it.  The discovery-side minted pool
+underivable *against the tensor surface alone*; the kernel prior-art
+bank is what makes the fold-to-fused-op theorems derivable (each
+fused op's denotation is encoded, so minting the standard fused
+kernel is a known move).  The discovery-side minted pool
 (``lawdata.CANDIDATE_LAWS`` / ``impact.new_laws``) is deliberately
 absent: kernelopt ships no minted candidates, and the parent repo's
 unshipped machinery is not this bank's premise.
@@ -108,6 +113,7 @@ from mlopt_discovery.verifier import verify_law
 from mlopt_orchestrator.optimize import default_rules
 
 from mlopt_kernel import KERNEL_RULES, KernelSink, kernel_cost
+from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES
 
 __all__ = [
     "BeatRow",
@@ -189,14 +195,22 @@ def _substrate_bank() -> list:
 
 
 def known_bank() -> list:
-    """The derivability floor: ``KERNEL_RULES`` U the substrate bank.
+    """The derivability floor: kernel bank U kernel prior art U substrate.
 
+    ``KERNEL_RULES`` plus ``KERNEL_PRIOR_ART_RULES`` — the
+    kernel-domain prior-art encoding
+    (:mod:`mlopt_kernel.priorart`: fused-kernel denotations, Halide
+    tiling distributions, GEMM operand folds, codegen strength
+    reductions — the vocabulary whose absence made ``underivable``
+    mean "not in our tensor catalog") — plus the substrate bank.
     Kernel names win on collision (none exist today — every
-    ``kern_*`` name is distinct from the substrate's), deduplicated
-    by name.
+    ``kern_*``/``pa_*`` name is distinct from the substrate's),
+    deduplicated by name.
     """
     seen: dict[str, Any] = {}
-    for r in itertools.chain(KERNEL_RULES, _substrate_bank()):
+    for r in itertools.chain(
+        KERNEL_RULES, KERNEL_PRIOR_ART_RULES, _substrate_bank()
+    ):
         seen.setdefault(r.name, r)
     return list(seen.values())
 
@@ -471,6 +485,10 @@ def kernel_truth(lhs: Any, rhs: Any) -> tuple[str, str]:
         ref = sink.lower(IR(root=lhs, inputs=inputs, input_names=names))
         opt = sink.lower(IR(root=rhs, inputs=inputs, input_names=names))
         out_r, out_o = ref(*feeds), opt(*feeds)
+        # A scalar-out program (a Const-fold instance) returns a
+        # python number — lift before the isfinite/diff checks.
+        out_r = torch.as_tensor(out_r)
+        out_o = torch.as_tensor(out_o)
     except Exception as e:
         return "skip", f"{type(e).__name__}: {e}"
     finite = bool(
@@ -478,7 +496,10 @@ def kernel_truth(lhs: Any, rhs: Any) -> tuple[str, str]:
     )
     if not finite:
         return "indeterminate", "non-finite output"
-    rep = sink.verify(ref, opt, feeds, rtol=1e-6, atol=1e-8)
+    try:
+        rep = sink.verify(ref, opt, feeds, rtol=1e-6, atol=1e-8)
+    except Exception as e:
+        return "skip", f"{type(e).__name__}: {e}"
     verdict = "equal" if rep.passed else "unequal"
     return verdict, f"max_abs {rep.max_abs:.2e}"
 
@@ -906,7 +927,9 @@ def render_markdown(
         "the human-review queue.  **cert** = the law's own rewrite "
         "carries a standalone-replayable certificate on its instance "
         "(`verify_law` + `verify_certificate`); **derivable** = the "
-        "known bank — `KERNEL_RULES` U the shared substrate surface "
+        "known bank — `KERNEL_RULES` U the kernel prior-art bank "
+        "(`KERNEL_PRIOR_ART_RULES`, the codegen vocabulary) U the "
+        "shared substrate surface "
         "(`default_rules` + `ALL_RULES_WITH_LAYOUT` + `ATTENTION` + "
         "scan monoids + the prior-art FUSION/CATEGORICAL slice) — "
         "minus the candidate and its alpha-siblings, already proves "

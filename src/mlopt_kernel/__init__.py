@@ -19,6 +19,7 @@ from mlopt_kernel.laws import (
     KERNEL_RULES,
     SCHEDULED_KERNEL_OPS,
 )
+from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES
 from mlopt_kernel.sink import (
     KernelExecutor,
     KernelSink,
@@ -27,6 +28,7 @@ from mlopt_kernel.sink import (
 
 __all__ = [
     "FUSED_KERNEL_OPS",
+    "KERNEL_PRIOR_ART_RULES",
     "KERNEL_RULES",
     "SCHEDULED_KERNEL_OPS",
     "KernelBoard",

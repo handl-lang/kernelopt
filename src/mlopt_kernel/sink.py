@@ -218,7 +218,11 @@ def _bindings() -> dict[str, Any]:
         "minimum": torch.minimum,
         "mish": torch.nn.functional.mish,
         "mul": torch.mul,
-        "neg": torch.neg,
+        # ``neg``/``reciprocal`` lift scalar args (a ``Const`` leaf
+        # evaluates to a python float) to a 0-d tensor — the binding
+        # contract is "tensor or scalar", and the unary aten ops only
+        # take tensors.
+        "neg": lambda t: torch.neg(torch.as_tensor(t)),
         "om_decayed": _om_decayed,
         # The scheduled-op spelled body: ``om_chunk_scan`` *is* the
         # concat of its arms — the verify-first fallback (and what a
@@ -229,7 +233,7 @@ def _bindings() -> dict[str, Any]:
         ),
         "permute": lambda x, dims: x.permute(*dims),
         "pow": torch.pow,
-        "reciprocal": torch.reciprocal,
+        "reciprocal": lambda t: torch.reciprocal(torch.as_tensor(t)),
         "relu": torch.relu,
         "remainder": torch.remainder,
         "reshape": lambda x, shape: (
