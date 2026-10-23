@@ -1,0 +1,4570 @@
+{
+  "env": {
+    "timestamp_utc": "2026-10-23 04:03 UTC",
+    "git_sha": "e111e3c",
+    "git_dirty": false,
+    "torch": "2.14.1+cu130",
+    "device": "cuda"
+  },
+  "schema": 1,
+  "protocol": {
+    "episodes": 44,
+    "page": 24,
+    "budget": 24,
+    "seed": 0,
+    "player": "playbook",
+    "referee": "full",
+    "rounds": 4,
+    "fuel": 256,
+    "cases": null,
+    "mint": "kernel-corpus-compose",
+    "vocab": "hand",
+    "dry": false
+  },
+  "corpus": "kernel",
+  "episodes": 44,
+  "evaluated": 129,
+  "arena_verdicts": {
+    "known": 16,
+    "useful": 102,
+    "unverified": 9,
+    "true": 1,
+    "false": 1
+  },
+  "minted": 117,
+  "composed": 111,
+  "guarded": 97,
+  "admitted": 97,
+  "leg_refusals": {
+    "pay": 8,
+    "admitted": 97,
+    "oracle": 12
+  },
+  "novelty": {
+    "known": 96,
+    "unpaid": 1
+  },
+  "finds": [],
+  "candidates": [
+    {
+      "name": "grammar:sub_to_add_dup",
+      "family": "algebraic-grammar",
+      "episode": 0,
+      "arena": {
+        "verdict": "known",
+        "relation": "duplicate",
+        "num_true": null,
+        "derivable": null,
+        "base_cost": 16.0,
+        "cand_cost": 16.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_ln_gelu_res: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_swiglu__kern_fuse_rmsnorm_6@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_swiglu__kern_fuse_rmsnorm_6@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.09090909090909091
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_swiglu__rms_norm_fold_nogain_8@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 2.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu__kern_fuse_rmsnorm_0@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu__kern_fuse_rmsnorm_0@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.18181818181818182
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu__rms_norm_fold_nogain_2@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 4.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_1@kernel_rms_swiglu__rms_norm_fold_nogain_5@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 4.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_swiglu__kern_square_strength_7@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 7.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u21927 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_swiglu__kern_square_strength_7@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.3181818181818182
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu__kern_square_strength_1@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 9.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u21929 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu__kern_square_strength_1@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.4090909090909091
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_1@kernel_rms_swiglu__kern_square_strength_4@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 9.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u21929 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_silu__kern_fuse_rmsnorm_1@kernel_rms_swiglu__kern_square_strength_4@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.4090909090909091
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 12.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u219212 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_silu__kern_fuse_rmsnorm_0@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.5454545454545454
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_silu__kern_fuse_rmsnorm_1@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 12.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u219212 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_silu__kern_fuse_rmsnorm_1@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.5454545454545454
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_silu__rms_norm_fold_nogain_4@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 12.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_silu__rms_norm_fold_nogain_5@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 12.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_fuse_rmsnorm_9@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 13.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u219213 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mul3__kern_fuse_rmsnorm_9@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.5909090909090909
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_fuse_rmsnorm_10@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 13.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u219213 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mul3__kern_fuse_rmsnorm_10@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.5909090909090909
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mul3__rms_norm_fold_nogain_13@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 13.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__rms_norm_fold_nogain_14@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 13.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_fuse_rmsnorm_15@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 13.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_rms_swiglu 22\u219213 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mul3__kern_fuse_rmsnorm_15@kernel_rms_swiglu)"
+        }
+      ],
+      "measured": {
+        "kernel_rms_swiglu": 0.5909090909090909
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mul3__rms_norm_fold_nogain_18@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 22.0,
+        "cand_cost": 13.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_rms_swiglu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_silu__kern_square_strength_2@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 17.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_silu__kern_square_strength_3@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 17.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_square_strength_11@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 18.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_square_strength_12@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 18.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_square_strength_16@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 18.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mul3__kern_square_strength_17@kernel_rms_swiglu",
+      "family": "synth-composite",
+      "episode": 1,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 22.0,
+        "cand_cost": 18.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_rms_swiglu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_layernorm__kern_fuse_mm_gelu_0@kernel_ln_mm_gelu",
+      "family": "synth-composite",
+      "episode": 2,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_ln_mm_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_ln_mm_gelu 16\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_layernorm__kern_fuse_mm_gelu_0@kernel_ln_mm_gelu)"
+        }
+      ],
+      "measured": {
+        "kernel_ln_mm_gelu": 0.125
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_rmsnorm__kern_fuse_mm_gelu_1@kernel_ln_mm_gelu",
+      "family": "synth-composite",
+      "episode": 2,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_ln_mm_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_ln_mm_gelu 16\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_rmsnorm__kern_fuse_mm_gelu_1@kernel_ln_mm_gelu)"
+        }
+      ],
+      "measured": {
+        "kernel_ln_mm_gelu": 0.25
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mm_gelu__rms_norm_fold_nogain_5@kernel_ln_mm_gelu",
+      "family": "synth-composite",
+      "episode": 2,
+      "arena": {
+        "verdict": "unverified",
+        "relation": "new",
+        "num_true": null,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 4.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_ln_mm_gelu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_ln_mm_gelu: skip (KeyError: \"KernelSink cannot lower op 'rms_norm' \u2014 not in supported_ops\") \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mm_gelu__kern_square_strength_4@kernel_ln_mm_gelu",
+      "family": "synth-composite",
+      "episode": 2,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 16.0,
+        "cand_cost": 13.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_ln_mm_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_ln_mm_gelu 16\u219213 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mm_gelu__kern_square_strength_4@kernel_ln_mm_gelu)"
+        }
+      ],
+      "measured": {
+        "kernel_ln_mm_gelu": 0.8125
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_square_strength_6@kernel_ln_mm_gelu",
+      "family": "synth-composite",
+      "episode": 2,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 16.0,
+        "cand_cost": 14.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_ln_mm_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_ln_mm_gelu 16\u219214 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_square_strength_6@kernel_ln_mm_gelu)"
+        }
+      ],
+      "measured": {
+        "kernel_ln_mm_gelu": 0.875
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_naturality_scalar_rev__kern_fuse_mm_bias_0@kernel_mm_sb_gelu",
+      "family": "synth-composite",
+      "episode": 3,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 5.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_mm_sb_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_mm_sb_gelu 5\u21924 (verify True); kernel_softmax_masked 13\u219211 (verify True); kernel_mm_scale_bias 3\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "3/3 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_naturality_scalar_rev__kern_fuse_mm_bias_0@kernel_mm_sb_gelu)"
+        }
+      ],
+      "measured": {
+        "kernel_mm_sb_gelu": 0.8,
+        "kernel_softmax_masked": 0.8461538461538461,
+        "kernel_mm_scale_bias": 0.6666666666666666
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax_mm__kern_fuse_mm_scale_2@kernel_attn_residual",
+      "family": "synth-composite",
+      "episode": 4,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 6.66e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21923 (verify True); kernel_sdpa 12\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax_mm__kern_fuse_mm_scale_2@kernel_attn_residual)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.23076923076923078,
+        "kernel_sdpa": 0.16666666666666666
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__kern_fuse_mm_scale_0@kernel_attn_residual",
+      "family": "synth-composite",
+      "episode": 4,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 2.00e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21924 (verify True); kernel_sdpa 12\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__kern_fuse_mm_scale_0@kernel_attn_residual)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.3076923076923077,
+        "kernel_sdpa": 0.25
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax_mm__naturality_scalar_rev_3@kernel_attn_residual",
+      "family": "synth-composite",
+      "episode": 4,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 7.11e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21924 (verify True); kernel_sdpa 12\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax_mm__naturality_scalar_rev_3@kernel_attn_residual)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.3076923076923077,
+        "kernel_sdpa": 0.25
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__kern_fuse_mm_scale_4@kernel_attn_residual",
+      "family": "synth-composite",
+      "episode": 4,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 5.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 2.00e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21925 (verify True); kernel_sdpa 12\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__kern_fuse_mm_scale_4@kernel_attn_residual)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.38461538461538464,
+        "kernel_sdpa": 0.3333333333333333
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "recognize:softmax",
+      "family": "pattern-recognition",
+      "episode": 4,
+      "arena": {
+        "verdict": "known",
+        "relation": "duplicate",
+        "num_true": null,
+        "derivable": null,
+        "base_cost": 13.0,
+        "cand_cost": 13.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 2.66e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21926 (verify True); kernel_softmax_masked 13\u21925 (verify True); kernel_softmax 7\u21922 (verify True); kernel_softmax_mm 14\u21926 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "6/6 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (recognize:softmax)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.46153846153846156,
+        "kernel_softmax_masked": 0.38461538461538464,
+        "kernel_softmax": 0.2857142857142857,
+        "kernel_softmax_mm": 0.42857142857142855
+      },
+      "novelty": "unpaid"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__naturality_scalar_rev_1@kernel_attn_residual",
+      "family": "synth-composite",
+      "episode": 4,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 5.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 2.66e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21925 (verify True); kernel_sdpa 12\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__naturality_scalar_rev_1@kernel_attn_residual)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.38461538461538464,
+        "kernel_sdpa": 0.3333333333333333
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__naturality_scalar_rev_5@kernel_attn_residual",
+      "family": "synth-composite",
+      "episode": 4,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 6.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 1.67e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_attn_residual 13\u21926 (verify True); kernel_sdpa 12\u21925 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__naturality_scalar_rev_5@kernel_attn_residual)"
+        }
+      ],
+      "measured": {
+        "kernel_attn_residual": 0.46153846153846156,
+        "kernel_sdpa": 0.4166666666666667
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__kern_fuse_mm_scale_bias_2@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.00e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__kern_fuse_mm_scale_bias_2@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.15384615384615385
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__kern_fuse_mm_scale_bias_6@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.33e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__kern_fuse_mm_scale_bias_6@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.23076923076923078
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__kern_fuse_mm_scale_1@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 1.78e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__kern_fuse_mm_scale_1@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.23076923076923078
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__kern_fuse_mm_scale_5@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 1.78e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__kern_fuse_mm_scale_5@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.3076923076923077
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_softmax__naturality_scalar_rev_3@kernel_softmax_masked__kern_fuse_mm_bias_0@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.55e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_softmax__naturality_scalar_rev_3@kernel_softmax_masked__kern_fuse_mm_bias_0@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.23076923076923078
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_softmax_fold__naturality_scalar_rev_7@kernel_softmax_masked__kern_fuse_mm_bias_1@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.00e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_softmax_fold__naturality_scalar_rev_7@kernel_softmax_masked__kern_fuse_mm_bias_1@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.3076923076923077
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__kern_fuse_addmul_0@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.22e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__kern_fuse_addmul_0@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.23076923076923078
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__kern_fuse_addmul_4@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.22e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__kern_fuse_addmul_4@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.3076923076923077
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__naturality_scalar_rev_3@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.22e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__naturality_scalar_rev_3@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.3076923076923077
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__naturality_scalar_rev_7@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 5.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 1.67e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u21925 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__naturality_scalar_rev_7@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.38461538461538464
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_naturality_scalar_rev__kern_fuse_mm_bias_8@kernel_softmax_masked",
+      "family": "synth-composite",
+      "episode": 5,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 12.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_mm_sb_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax_masked 13\u219211 (verify True); kernel_mm_sb_gelu 5\u21924 (verify True); kernel_mm_scale_bias 3\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "3/3 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_naturality_scalar_rev__kern_fuse_mm_bias_8@kernel_softmax_masked)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax_masked": 0.8461538461538461,
+        "kernel_mm_sb_gelu": 0.8,
+        "kernel_mm_scale_bias": 0.6666666666666666
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "grammar:exp_distribute",
+      "family": "algebraic-grammar",
+      "episode": 5,
+      "arena": {
+        "verdict": "true",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 15.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax_masked: equal (max_abs 2.20e-03)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "grammar:FALSE_exp_add",
+      "family": "algebraic-grammar",
+      "episode": 5,
+      "arena": {
+        "verdict": "false",
+        "relation": "new",
+        "num_true": false,
+        "derivable": false,
+        "base_cost": 13.0,
+        "cand_cost": 15.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_softmax_masked: unequal (max_abs 5.66e+11)",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_softmax_masked: unequal (max_abs 5.66e+11)"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_naturality_scalar_rev__kern_fuse_mm_bias_0@kernel_mm_scale_bias",
+      "family": "synth-composite",
+      "episode": 17,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 3.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_mm_sb_gelu: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_mm_scale_bias 3\u21922 (verify True); kernel_mm_sb_gelu 5\u21924 (verify True); kernel_softmax_masked 13\u219211 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "3/3 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_naturality_scalar_rev__kern_fuse_mm_bias_0@kernel_mm_scale_bias)"
+        }
+      ],
+      "measured": {
+        "kernel_mm_scale_bias": 0.6666666666666666,
+        "kernel_mm_sb_gelu": 0.8,
+        "kernel_softmax_masked": 0.8461538461538461
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax_mm__kern_fuse_mm_scale_2@kernel_sdpa",
+      "family": "synth-composite",
+      "episode": 22,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 12.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 7.55e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa 12\u21922 (verify True); kernel_attn_residual 13\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax_mm__kern_fuse_mm_scale_2@kernel_sdpa)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa": 0.16666666666666666,
+        "kernel_attn_residual": 0.23076923076923078
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__kern_fuse_mm_scale_0@kernel_sdpa",
+      "family": "synth-composite",
+      "episode": 22,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 12.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 1.67e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa 12\u21923 (verify True); kernel_attn_residual 13\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__kern_fuse_mm_scale_0@kernel_sdpa)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa": 0.25,
+        "kernel_attn_residual": 0.3076923076923077
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax_mm__naturality_scalar_rev_3@kernel_sdpa",
+      "family": "synth-composite",
+      "episode": 22,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 12.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 7.55e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa 12\u21923 (verify True); kernel_attn_residual 13\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax_mm__naturality_scalar_rev_3@kernel_sdpa)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa": 0.25,
+        "kernel_attn_residual": 0.3076923076923077
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__kern_fuse_mm_scale_4@kernel_sdpa",
+      "family": "synth-composite",
+      "episode": 22,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 12.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 1.78e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa 12\u21924 (verify True); kernel_attn_residual 13\u21925 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__kern_fuse_mm_scale_4@kernel_sdpa)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa": 0.3333333333333333,
+        "kernel_attn_residual": 0.38461538461538464
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__naturality_scalar_rev_1@kernel_sdpa",
+      "family": "synth-composite",
+      "episode": 22,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 12.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 1.67e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa 12\u21924 (verify True); kernel_attn_residual 13\u21925 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__naturality_scalar_rev_1@kernel_sdpa)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa": 0.3333333333333333,
+        "kernel_attn_residual": 0.38461538461538464
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__naturality_scalar_rev_5@kernel_sdpa",
+      "family": "synth-composite",
+      "episode": 22,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 12.0,
+        "cand_cost": 5.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_attn_residual: equal (max_abs 1.89e-15)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa 12\u21925 (verify True); kernel_attn_residual 13\u21926 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__naturality_scalar_rev_5@kernel_sdpa)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa": 0.4166666666666667,
+        "kernel_attn_residual": 0.46153846153846156
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax_mm__kern_fuse_mm_scale_2@kernel_sdpa_cap",
+      "family": "synth-composite",
+      "episode": 23,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 4.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_sdpa_cap: equal (max_abs 2.22e-16)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa_cap 16\u21924 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax_mm__kern_fuse_mm_scale_2@kernel_sdpa_cap)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa_cap": 0.25
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__kern_fuse_mm_scale_0@kernel_sdpa_cap",
+      "family": "synth-composite",
+      "episode": 23,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 5.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_sdpa_cap: equal (max_abs 3.47e-18)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa_cap 16\u21925 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__kern_fuse_mm_scale_0@kernel_sdpa_cap)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa_cap": 0.3125
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax_mm__naturality_scalar_rev_3@kernel_sdpa_cap",
+      "family": "synth-composite",
+      "episode": 23,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 5.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_sdpa_cap: equal (max_abs 2.22e-16)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa_cap 16\u21925 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax_mm__naturality_scalar_rev_3@kernel_sdpa_cap)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa_cap": 0.3125
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__kern_fuse_mm_scale_4@kernel_sdpa_cap",
+      "family": "synth-composite",
+      "episode": 23,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 6.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_sdpa_cap: equal (max_abs 3.04e-18)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa_cap 16\u21926 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__kern_fuse_mm_scale_4@kernel_sdpa_cap)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa_cap": 0.375
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_softmax__naturality_scalar_rev_1@kernel_sdpa_cap",
+      "family": "synth-composite",
+      "episode": 23,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 6.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_sdpa_cap: equal (max_abs 3.04e-18)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa_cap 16\u21926 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_softmax__naturality_scalar_rev_1@kernel_sdpa_cap)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa_cap": 0.375
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_softmax_fold__naturality_scalar_rev_5@kernel_sdpa_cap",
+      "family": "synth-composite",
+      "episode": 23,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 16.0,
+        "cand_cost": 7.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_sdpa_cap: equal (max_abs 3.47e-18)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_sdpa_cap 16\u21927 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_softmax_fold__naturality_scalar_rev_5@kernel_sdpa_cap)"
+        }
+      ],
+      "measured": {
+        "kernel_sdpa_cap": 0.4375
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_square_strength__kern_fuse_addmul_0@kernel_strength__kern_div_recip_0@kernel_strength",
+      "family": "synth-composite",
+      "episode": 25,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 7.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_strength: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_strength 7\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_square_strength__kern_fuse_addmul_0@kernel_strength__kern_div_recip_0@kernel_strength)"
+        }
+      ],
+      "measured": {
+        "kernel_strength": 0.2857142857142857
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_square_strength__kern_fuse_addmul_0@kernel_strength",
+      "family": "synth-composite",
+      "episode": 25,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 7.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_strength: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_strength 7\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_square_strength__kern_fuse_addmul_0@kernel_strength)"
+        }
+      ],
+      "measured": {
+        "kernel_strength": 0.42857142857142855
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_square_strength__kern_fuse_mul3_0@kernel_powscale",
+      "family": "synth-composite",
+      "episode": 26,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 5.0,
+        "cand_cost": 1.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_powscale: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_powscale 5\u21921 (verify True); kernel_strength_mul 7\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "2/2 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_square_strength__kern_fuse_mul3_0@kernel_powscale)"
+        }
+      ],
+      "measured": {
+        "kernel_powscale": 0.2,
+        "kernel_strength_mul": 0.42857142857142855
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_square_strength__kern_fuse_mul3_0@kernel_strength_mul__kern_div_recip_0@kernel_strength_mul",
+      "family": "synth-composite",
+      "episode": 29,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 7.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_strength_mul: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_strength_mul 7\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_square_strength__kern_fuse_mul3_0@kernel_strength_mul__kern_div_recip_0@kernel_strength_mul)"
+        }
+      ],
+      "measured": {
+        "kernel_strength_mul": 0.2857142857142857
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_square_strength__kern_fuse_mul3_0@kernel_strength_mul",
+      "family": "synth-composite",
+      "episode": 29,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 7.0,
+        "cand_cost": 3.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_strength_mul: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_strength_mul 7\u21923 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_square_strength__kern_fuse_mul3_0@kernel_strength_mul)"
+        }
+      ],
+      "measured": {
+        "kernel_strength_mul": 0.42857142857142855
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_silu__kern_fuse_silu_0@kernel_mixed",
+      "family": "synth-composite",
+      "episode": 30,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 6.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_mixed: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_mixed 6\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_silu__kern_fuse_silu_0@kernel_mixed)"
+        }
+      ],
+      "measured": {
+        "kernel_mixed": 0.3333333333333333
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "mixed:mul_unsqueeze_l_id",
+      "family": "census-mixed-view",
+      "episode": 34,
+      "arena": {
+        "verdict": "known",
+        "relation": "duplicate",
+        "num_true": null,
+        "derivable": null,
+        "base_cost": 12.0,
+        "cand_cost": 12.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_decayed_pair: skip (RuntimeError: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 1) \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_decayed_pair: skip (RuntimeError: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 1) \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "mixed:mul_unsqueeze_l_w",
+      "family": "census-mixed-view",
+      "episode": 34,
+      "arena": {
+        "verdict": "known",
+        "relation": "duplicate",
+        "num_true": null,
+        "derivable": null,
+        "base_cost": 12.0,
+        "cand_cost": 12.0
+      },
+      "admitted": false,
+      "reason": "oracle: corpus:kernel_decayed_pair: skip (RuntimeError: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 1) \u2014 inconclusive",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": false,
+          "detail": "corpus:kernel_decayed_pair: skip (RuntimeError: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 1) \u2014 inconclusive"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_kern_fuse_mm_bias__kern_fuse_om_decayed_0@kernel_decayed_chunks",
+      "family": "synth-composite",
+      "episode": 35,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 11.0,
+        "cand_cost": 9.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_decayed_chunks: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_decayed_chunks 11\u21929 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mm_bias__kern_fuse_om_decayed_0@kernel_decayed_chunks)"
+        }
+      ],
+      "measured": {
+        "kernel_decayed_chunks": 0.8181818181818182
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan__kern_fuse_mm_scale_0@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan__kern_fuse_mm_scale_0@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan_1@kernel_chunk_scan__kern_fuse_mm_scale_0@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 15.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219215 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan_1@kernel_chunk_scan__kern_fuse_mm_scale_0@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.75
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_8@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 16.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219216 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_8@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.8
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_2@kernel_chunk_scan__kern_fuse_om_decayed_1@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 15.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219215 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_2@kernel_chunk_scan__kern_fuse_om_decayed_1@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.75
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 18.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219218 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.9
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 18.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219218 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.9
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan_1@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 16.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219216 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan_1@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.8
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_2@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 16.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219216 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_2@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.8
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_2@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_6@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 16.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219216 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_2@kernel_chunk_scan__syn_kern_div_recip__kern_fuse_mm_scale_5@kernel_chunk_scan_6@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.8
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan__kern_div_recip_9@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan__kern_div_recip_9@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_chunk_scan__kern_div_recip_4@kernel_chunk_scan__kern_fuse_mm_scale_10@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_chunk_scan__kern_div_recip_4@kernel_chunk_scan__kern_fuse_mm_scale_10@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_fuse_om_decayed_4@kernel_chunk_scan__kern_div_recip_3@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 16.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219216 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_fuse_om_decayed_4@kernel_chunk_scan__kern_div_recip_3@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.8
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_div_recip_5@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_div_recip_5@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_2@kernel_chunk_scan__kern_div_recip_7@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_2@kernel_chunk_scan__kern_div_recip_7@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan__kern_div_recip_4@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 20.0,
+        "cand_cost": 18.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219218 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan__kern_div_recip_4@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.9
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 20.0,
+        "cand_cost": 18.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219218 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan__kern_fuse_mm_bias_3@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.9
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_fuse_om_decayed_4@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 20.0,
+        "cand_cost": 17.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219217 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan__kern_fuse_om_decayed_4@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.85
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 20.0,
+        "cand_cost": 18.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219218 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_1@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.9
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_2@kernel_chunk_scan",
+      "family": "synth-composite",
+      "episode": 36,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 20.0,
+        "cand_cost": 18.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan 20\u219218 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_2@kernel_chunk_scan)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan": 0.9
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_div_recip__kern_fuse_mm_scale_1@kernel_decayed_div",
+      "family": "synth-composite",
+      "episode": 38,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 4.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_decayed_div: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_decayed_div 4\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_div_recip__kern_fuse_mm_scale_1@kernel_decayed_div)"
+        }
+      ],
+      "measured": {
+        "kernel_decayed_div": 0.5
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_div_recip_0@kernel_decayed_div",
+      "family": "synth-composite",
+      "episode": 38,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 4.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_decayed_div: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_decayed_div 4\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_div_recip_0@kernel_decayed_div)"
+        }
+      ],
+      "measured": {
+        "kernel_decayed_div": 0.5
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan3__kern_fuse_mm_scale_0@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 40.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219240 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan3__kern_fuse_mm_scale_0@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9302325581395349
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_mm_bias__kern_div_recip_1@kernel_chunk_scan3__kern_fuse_mm_scale_1@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 40.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219240 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_mm_bias__kern_div_recip_1@kernel_chunk_scan3__kern_fuse_mm_scale_1@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9302325581395349
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_mm_bias__kern_div_recip_1@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_mm_bias__kern_div_recip_1@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_div_recip__kern_fuse_mm_scale_10@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_div_recip__kern_fuse_mm_scale_10@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_div_recip__kern_fuse_mm_scale_11@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_div_recip__kern_fuse_mm_scale_11@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_div_recip__kern_fuse_mm_scale_12@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_div_recip__kern_fuse_mm_scale_12@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan3_2@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 39.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219239 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_fuse_mm_bias__kern_div_recip_0@kernel_chunk_scan3_2@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9069767441860465
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_fuse_mm_bias__kern_div_recip_1@kernel_chunk_scan3_3@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 39.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219239 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_fuse_mm_bias__kern_div_recip_1@kernel_chunk_scan3_3@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9069767441860465
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_div_recip__kern_fuse_mm_scale_10@kernel_chunk_scan3_4@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 39.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219239 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_div_recip__kern_fuse_mm_scale_10@kernel_chunk_scan3_4@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9069767441860465
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_div_recip__kern_fuse_mm_scale_11@kernel_chunk_scan3_5@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 39.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219239 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_div_recip__kern_fuse_mm_scale_11@kernel_chunk_scan3_5@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9069767441860465
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_div_recip__kern_fuse_mm_scale_12@kernel_chunk_scan3_6@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 39.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219239 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__syn_kern_div_recip__kern_fuse_mm_scale_12@kernel_chunk_scan3_6@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9069767441860465
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan_3__kern_div_recip_7@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan_3__kern_div_recip_7@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan_3__kern_div_recip_8@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan_3__kern_div_recip_8@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan_3__kern_div_recip_9@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan_3__kern_div_recip_9@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__kern_fuse_mm_bias_7@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 40.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219240 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__kern_fuse_mm_bias_7@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9302325581395349
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__kern_fuse_mm_bias_8@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 40.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219240 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3__kern_fuse_mm_bias_8@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9302325581395349
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan_3__kern_fuse_mm_bias_5@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan_3__kern_fuse_mm_bias_5@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_chunk_scan_3__kern_fuse_mm_bias_6@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_chunk_scan_3__kern_fuse_mm_bias_6@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_2@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_3@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_3@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    },
+    {
+      "name": "syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_4@kernel_chunk_scan3",
+      "family": "synth-composite",
+      "episode": 39,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": true,
+        "base_cost": 43.0,
+        "cand_cost": 41.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_chunk_scan3: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_chunk_scan3 43\u219241 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_kern_fuse_om_decayed__kern_fuse_chunk_scan_3_4@kernel_chunk_scan3)"
+        }
+      ],
+      "measured": {
+        "kernel_chunk_scan3": 0.9534883720930233
+      },
+      "novelty": "known"
+    }
+  ],
+  "wall_s": 180.6
+}
