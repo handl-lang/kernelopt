@@ -1,0 +1,161 @@
+{
+  "env": {
+    "timestamp_utc": "2026-10-23 02:26 UTC",
+    "git_sha": "dd80062",
+    "git_dirty": false,
+    "torch": "2.14.1+cu130",
+    "device": "cuda"
+  },
+  "schema": 1,
+  "protocol": {
+    "episodes": 10,
+    "page": 24,
+    "budget": 24,
+    "seed": 0,
+    "player": "playbook",
+    "referee": "full",
+    "rounds": 4,
+    "fuel": 256,
+    "cases": null,
+    "mint": "kernel-corpus-compose",
+    "vocab": "hand",
+    "dry": false
+  },
+  "corpus": "kernel",
+  "episodes": 10,
+  "evaluated": 3,
+  "arena_verdicts": {
+    "known": 2,
+    "useful": 1
+  },
+  "minted": 3,
+  "composed": 1,
+  "guarded": 1,
+  "admitted": 2,
+  "leg_refusals": {
+    "admitted": 2,
+    "pay": 1
+  },
+  "novelty": {
+    "unpaid": 1,
+    "known": 1
+  },
+  "finds": [],
+  "candidates": [
+    {
+      "name": "recognize:softmax",
+      "family": "pattern-recognition",
+      "episode": 4,
+      "arena": {
+        "verdict": "known",
+        "relation": "duplicate",
+        "num_true": null,
+        "derivable": null,
+        "base_cost": 7.0,
+        "cand_cost": 7.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_softmax: equal (max_abs 3.47e-17)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_softmax 7\u21922 (verify True); kernel_softmax_mm 14\u21926 (verify True); kernel_sdpa 12\u21925 (verify True); kernel_sdpa_cap 16\u21927 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "4/4 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (recognize:softmax)"
+        }
+      ],
+      "measured": {
+        "kernel_softmax": 0.2857142857142857,
+        "kernel_softmax_mm": 0.42857142857142855,
+        "kernel_sdpa": 0.4166666666666667,
+        "kernel_sdpa_cap": 0.4375
+      },
+      "novelty": "unpaid"
+    },
+    {
+      "name": "grammar:sub_to_add_dup",
+      "family": "algebraic-grammar",
+      "episode": 5,
+      "arena": {
+        "verdict": "known",
+        "relation": "duplicate",
+        "num_true": null,
+        "derivable": null,
+        "base_cost": 13.0,
+        "cand_cost": 13.0
+      },
+      "admitted": false,
+      "reason": "pay: no verified cost-improving extraction",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_layernorm: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": false,
+          "detail": "no verified cost-improving extraction"
+        }
+      ],
+      "measured": {},
+      "novelty": ""
+    },
+    {
+      "name": "syn_naturality_scalar_rev__kern_fuse_mm_bias_0@kernel_mm_scale_bias",
+      "family": "synth-composite",
+      "episode": 7,
+      "arena": {
+        "verdict": "useful",
+        "relation": "new",
+        "num_true": true,
+        "derivable": false,
+        "base_cost": 3.0,
+        "cand_cost": 2.0
+      },
+      "admitted": true,
+      "reason": "cleared",
+      "stages": [
+        {
+          "name": "oracle",
+          "passed": true,
+          "detail": "corpus:kernel_mm_scale_bias: equal (max_abs 0.00e+00)"
+        },
+        {
+          "name": "pay",
+          "passed": true,
+          "detail": "kernel_mm_scale_bias 3\u21922 (verify True)"
+        },
+        {
+          "name": "sweep",
+          "passed": true,
+          "detail": "1/1 equal corpus sites"
+        },
+        {
+          "name": "cert",
+          "passed": true,
+          "detail": "lhs->rhs 1 steps (syn_naturality_scalar_rev__kern_fuse_mm_bias_0@kernel_mm_scale_bias)"
+        }
+      ],
+      "measured": {
+        "kernel_mm_scale_bias": 0.6666666666666666
+      },
+      "novelty": "known"
+    }
+  ],
+  "wall_s": 7.6
+}
