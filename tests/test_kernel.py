@@ -1251,3 +1251,99 @@ class TestPlayDomain:
             ]
         )
         assert rc == 0
+
+
+class TestCaseRegistry:
+    """The ``bench.discovery.kernel`` corpus contract.
+
+    Every registered row is ``(name, category, term, fires)`` with a
+    unique ``kernel_*`` name, a fires list drawn from
+    ``KERNEL_RULES``, and a spelled term whose every op
+    ``KernelSink`` lowers — the honest row's verify-first bound.
+    The composed stratum (the multi-op chains that lead the
+    registry, added after the overnight loop's thin single-op mint)
+    additionally checks its scripted fires land a verified,
+    strictly-lower extraction; the one fold-free workload spelling
+    stays an honest flat row.
+    """
+
+    #: The composed-stratum cases — scripted fires must strictly pay.
+    _COMPOSED = (
+        "kernel_ln_gelu_res",
+        "kernel_rms_swiglu",
+        "kernel_ln_mm_gelu",
+        "kernel_mm_sb_gelu",
+        "kernel_attn_residual",
+        "kernel_softmax_masked",
+        "kernel_rope",
+        "kernel_kv_score",
+        "kernel_gate_res",
+        "kernel_decayed_mask2",
+        "kernel_decayed_div",
+        "kernel_chunk_scan3",
+        "kernel_l2norm",
+        "kernel_strength_mul",
+    )
+
+    @staticmethod
+    def _rows():
+        from bench.discovery.kernel import _cases
+
+        return {n: (c, t, f) for n, c, t, f in _cases()}
+
+    def test_names_unique_and_prefixed(self):
+        """Every case registers once under the ``kernel_`` prefix."""
+        names = list(self._rows())
+        assert len(names) == len(set(names))
+        assert all(n.startswith("kernel_") for n in names)
+
+    def test_fires_resolve_and_ops_lower(self):
+        """Fires name bank rules; every term op is sink-lowerable."""
+        ops = KernelSink().supported_ops
+        bank = {r.name for r in KERNEL_RULES}
+        for name, (_cat, term, fires) in self._rows().items():
+            assert set(fires) <= bank, (name, fires)
+            stack = [term]
+            while stack:
+                u = stack.pop()
+                if isinstance(u, Op):
+                    assert u.op in ops, (name, u.op)
+                    stack.extend(u.args)
+
+    @pytest.mark.parametrize("name", _COMPOSED)
+    def test_composed_case_extraction_verifies(self, name):
+        """Fire the case's laws; the extraction verifies fp64."""
+        _cat, term, fires = self._rows()[name]
+        eg = EGraph()
+        root = eg.add_term(term)
+        for rn in fires:
+            eg.apply_rule(_rule(rn), root)
+        best = eg.extract_best(root, kernel_cost) or term
+        assert kernel_cost(best) < kernel_cost(term)
+        leaves = sorted(
+            {v.name: v for v in _all_vars(term)}.values(),
+            key=lambda v: v.name,
+        )
+        ir_s = IR(
+            root=term,
+            inputs=leaves,
+            input_names={v.name for v in leaves},
+        )
+        ir_b = IR(
+            root=best, inputs=leaves, input_names=ir_s.input_names
+        )
+        feeds = tuple(
+            torch.randn(tuple(v.typ.shape), dtype=torch.float64)
+            for v in leaves
+        )
+        sink = KernelSink()
+        rep = sink.verify(sink.lower(ir_s), sink.lower(ir_b), feeds)
+        assert rep.passed and rep.max_abs < 1e-9
+
+    def test_dequant_stays_honest_flat(self):
+        """``kernel_dequant_mm`` fires nothing — the row stays flat."""
+        _cat, term, fires = self._rows()["kernel_dequant_mm"]
+        assert fires == ()
+        eg = EGraph()
+        root = eg.add_term(term)
+        assert eg.extract_best(root, kernel_cost) == term

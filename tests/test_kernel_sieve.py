@@ -246,14 +246,17 @@ class TestMeasuredGateReal:
         """The flat-3 member: the chunk-scan denotation bridge makes
         the fold a theorem of the bank (``pa_om_chunk_scan_expand_3``
         — a scheduled ``om_chunk_scan`` IS the concat it schedules),
-        so it demotes to ``known`` before the beat gate runs."""
+        so it demotes to ``known`` before the beat gate runs.  The
+        instance comes from ``kernel_chunk_scan3`` — the registered
+        flat-3 case the corpus gained (the xcorpus spelling was the
+        only site before)."""
         row = ns.sieve(
             _rule("kern_fuse_chunk_scan_3"),
             bank,
             ctxs=ctxs,
             measure=True,
         )
-        assert row.instance_src == "corpus:xcorpus:scan_3"
+        assert row.instance_src == "corpus:kernel_chunk_scan3"
         assert row.cert and row.derivable is True
         assert "pa_om_chunk_scan_expand_3" in row.witness_rules
         assert row.verdict == "known"

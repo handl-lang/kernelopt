@@ -1,6 +1,6 @@
 """The kernelopt spike's bench cases — measured codegen pay.
 
-Twenty-nine kernel cases: a spelled program, a codegen-law candidate, and
+Forty-four kernel cases: a spelled program, a codegen-law candidate, and
 the honest row — lower both through
 :class:`mlopt_kernel.KernelSink`, verify numerically (verify-first),
 then time spelled vs scheduled.  Where the case has a registered
@@ -101,6 +101,74 @@ def _mk_decayed_cases():
             ),
             Op.make("split", vc, sizes=(64, 64), dim=1, index=i),
         )
+
+    # the composed decayed variants — a double-masked element, the
+    # arm's div-peel, and the flat 3-ary concat.
+    dm1 = _v("dm1", (128, 128))
+    dm2 = _v("dm2", (128, 128))
+    sd = _v("sd", (16, 128, 128))
+    dm = _v("dm", (128, 128))
+    vd = _v("vd", (16, 128, 128))
+    # the three-chunk scan: same split/decay_vec spelling as the
+    # binary carrier case, one more arm — sc3/vc3 carry 3·64 rows.
+    sc3 = _v("sc3", (16, 192, 64))
+    vc3 = _v("vc3", (16, 192, 64))
+    gc3 = _v("gc3", ())
+    chunk_decay3 = Op.make("decay", Op.make("sigmoid", gc3), t=64)
+    row_gate3 = Op.make(
+        "unsqueeze",
+        Op.make("decay_vec", Op.make("sigmoid", gc3), t=64),
+        dim=-1,
+    )
+    split3 = (64, 64, 64)
+
+    def chunk3_intra(i):
+        return Op.make(
+            "matmul",
+            Op.make(
+                "mul",
+                Op.make("split", sc3, sizes=split3, dim=1, index=i),
+                chunk_decay3,
+            ),
+            Op.make("split", vc3, sizes=split3, dim=1, index=i),
+        )
+
+    def chunk3_cross(i, j):
+        return Op.make(
+            "mul",
+            row_gate3,
+            Op.make(
+                "div",
+                Op.make(
+                    "matmul",
+                    Op.make("split", sc3, sizes=split3, dim=1, index=i),
+                    Op.make(
+                        "matmul",
+                        Op.make(
+                            "split",
+                            sc3,
+                            sizes=split3,
+                            dim=1,
+                            index=j,
+                        ),
+                        Op.make(
+                            "split",
+                            vc3,
+                            sizes=split3,
+                            dim=1,
+                            index=j,
+                        ),
+                    ),
+                ),
+                Const(2),
+            ),
+        )
+
+    def arm3(i):
+        t = chunk3_intra(i)
+        for j in range(i):
+            t = Op.make("add", t, chunk3_cross(i, j))
+        return t
 
     return (
         (
@@ -249,6 +317,49 @@ def _mk_decayed_cases():
             ),
             ("kern_fuse_chunk_scan",),
         ),
+        # The masked+decayed combo — ``(s ⊙ d₁ ⊙ d₂) @ v``: the
+        # element's mask is itself a product (decay ⊙ causal), so
+        # ``kern_fuse_mul3`` and ``kern_fuse_om_decayed`` compete
+        # over the same site — the composition surface a single
+        # decayed element lacks.
+        (
+            "kernel_decayed_mask2",
+            "speed",
+            Op.make(
+                "matmul",
+                Op.make(
+                    "mul",
+                    Op.make("mul", sm, dm1),
+                    dm2,
+                ),
+                vm,
+            ),
+            ("kern_fuse_mul3", "kern_fuse_om_decayed"),
+        ),
+        # The scan arm's own scale peel — ``(s ⊙ d) @ v / S``: the
+        # intra element under the constant divisor the chunked
+        # spelling divides every block by; the recip fold chains
+        # out of the decayed fold.
+        (
+            "kernel_decayed_div",
+            "speed",
+            Op.make(
+                "div",
+                Op.make("matmul", Op.make("mul", sd, dm), vd),
+                Const(2.0),
+            ),
+            ("kern_fuse_om_decayed", "kern_div_recip"),
+        ),
+        # The flat 3-ary scan — the same concat-of-chunks site as
+        # ``kernel_chunk_scan`` but spelled flat, the arity the
+        # ``kern_fuse_chunk_scan_3`` family member owns (the
+        # registered corpus had only the nested-binary spelling).
+        (
+            "kernel_chunk_scan3",
+            "speed",
+            Op.make("concat", arm3(0), arm3(1), arm3(2), dim=-2),
+            ("kern_fuse_chunk_scan_3",),
+        ),
     )
 
 
@@ -278,6 +389,230 @@ def _mk_decayed_scale_cases():
     return tuple(out)
 
 
+def _mk_chain_cases():
+    """The multi-op stratum — composed spellings, not single sites.
+
+    The overnight loop's thin mint (10 episodes, 3 minted on the
+    single-op head of the registry) was a corpus-bound artefact: one
+    fusion site per term leaves ``synthesize_rules`` no pair surface
+    and the census mint almost nothing to bind.  These cases spell
+    the chains real kernels actually carry — norm+activation
+    stacks, attention interiors, mm epilogue stacks, and the
+    workload spellings (rotary, gated residual, grouped dequant,
+    kv-cache concat) the heavy modules lower to.  ``--episodes N``
+    reads the registry in order, so the composed stratum leads:
+    the first-N slice now reaches terms whose subterm trees the
+    mint can compose over.
+    """
+    x = _v("x", (4096, 512))
+    y = _v("y", (4096, 512))
+    w = _v("w", (512, 512))
+    b = _v("b", (512,))
+    m = _v("m", (4096, 512))
+    g = _v("g", (4096, 512))
+    cv = _v("cv", (4096, 512))
+    sv = _v("sv", (4096, 512))
+    kn = _v("kn", (256, 512))
+    kc = _v("kc", (256, 512))
+    wq = _v("wq", (512, 512))
+    zp = _v("zp", (512,))
+    sc = _v("sc", (512,))
+
+    # the spelled norm blocks — the same sites the single-op cases
+    # carry, here as *operands* of the composed terms.
+    ln_center = Op.make(
+        "sub", x, Op.make("mean", x, dim=-1, keepdim=True)
+    )
+    layernorm = Op.make(
+        "mul",
+        ln_center,
+        Op.make(
+            "rsqrt",
+            Op.make(
+                "add",
+                Op.make(
+                    "mean",
+                    Op.make("pow", ln_center, Const(2)),
+                    dim=-1,
+                    keepdim=True,
+                ),
+                Const(1e-5),
+            ),
+        ),
+    )
+    rmsnorm = Op.make(
+        "mul",
+        x,
+        Op.make(
+            "rsqrt",
+            Op.make(
+                "add",
+                Op.make(
+                    "mean",
+                    Op.make("pow", x, Const(2)),
+                    dim=-1,
+                    keepdim=True,
+                ),
+                Const(1e-6),
+            ),
+        ),
+    )
+
+    def softmax_of(u):
+        return Op.make(
+            "div",
+            Op.make("exp", u),
+            Op.make("sum", Op.make("exp", u), dim=-1, keepdim=True),
+        )
+
+    # rotary's rotate-half: cat(-x_hi, x_lo) over the last axis —
+    # the split/neg/concat view chain the rope kernels spell.
+    lo = Op.make("split", x, sizes=(256, 256), dim=-1, index=0)
+    hi = Op.make("split", x, sizes=(256, 256), dim=-1, index=1)
+    rot = Op.make("concat", Op.make("neg", hi), lo, dim=-1)
+
+    return (
+        # The pre-norm residual block — ``x + gelu(ln(x))``: the
+        # norm block spelled inside the pointwise tail, not alone.
+        (
+            "kernel_ln_gelu_res",
+            "speed",
+            Op.make("add", Op.make("gelu", layernorm), x),
+            ("kern_fuse_layernorm",),
+        ),
+        # The gated-MLP norm chain — ``swiglu(rms(x), y)``: the
+        # swiglu site binds with the norm block as its gate child.
+        (
+            "kernel_rms_swiglu",
+            "speed",
+            Op.make(
+                "mul",
+                Op.make("mul", rmsnorm, Op.make("sigmoid", rmsnorm)),
+                y,
+            ),
+            ("kern_fuse_rmsnorm", "kern_fuse_silu", "kern_fuse_swiglu"),
+        ),
+        # The pre-norm MLP — ``gelu(ln(x) @ w)``: the mm epilogue
+        # fold's activation site sits over a norm operand.
+        (
+            "kernel_ln_mm_gelu",
+            "speed",
+            Op.make("gelu", Op.make("matmul", layernorm, w)),
+            ("kern_fuse_layernorm", "kern_fuse_mm_gelu"),
+        ),
+        # The full mm epilogue stack — ``gelu(mm·s + b)``: scale,
+        # bias and activation over the GEMM, the spelling the
+        # kf_mm_sb fold absorbs mid-chain.
+        (
+            "kernel_mm_sb_gelu",
+            "speed",
+            Op.make(
+                "gelu",
+                Op.make(
+                    "add",
+                    Op.make("mul", Op.make("matmul", x, w), Const(0.5)),
+                    b,
+                ),
+            ),
+            ("kern_fuse_mm_scale_bias", "kern_fuse_addmul"),
+        ),
+        # The attention block with its residual — ``x + softmax(qk·s)
+        # @ v``: the whole-sdpa site inside a residual add.
+        (
+            "kernel_attn_residual",
+            "speed",
+            Op.make(
+                "add",
+                x,
+                Op.make(
+                    "matmul",
+                    softmax_of(
+                        Op.make(
+                            "mul",
+                            Op.make("matmul", x, w),
+                            Const(0.25),
+                        )
+                    ),
+                    w,
+                ),
+            ),
+            (
+                "kern_fuse_mm_scale",
+                "kern_fuse_softmax",
+                "kern_fuse_softmax_mm",
+                "kern_fuse_sdpa",
+            ),
+        ),
+        # The masked-softmax interior — ``softmax(qk·s + m)``: the
+        # additive-mask spelling the attention kernels fold where a
+        # dropout node would sit eval-side (the sink has no dropout
+        # op — the mask add is the live composition surface).
+        (
+            "kernel_softmax_masked",
+            "speed",
+            softmax_of(
+                Op.make(
+                    "add",
+                    Op.make(
+                        "mul", Op.make("matmul", x, w), Const(0.25)
+                    ),
+                    m,
+                )
+            ),
+            ("kern_fuse_mm_scale", "kern_fuse_softmax"),
+        ),
+        # The rotary pair — ``x·cos + rot(x)·sin``: two products over
+        # a split/neg/concat view chain, the addmul2 site the
+        # pointwise-pair fold owns.
+        (
+            "kernel_rope",
+            "memory",
+            Op.make(
+                "add",
+                Op.make("mul", x, cv),
+                Op.make("mul", rot, sv),
+            ),
+            ("kern_fuse_addmul", "kern_fuse_addmul2"),
+        ),
+        # The kv-cache concat — ``(q @ cat(k_new, k_cache))·s``: the
+        # score matmul's operand materialises the cache append; the
+        # scale epilogue folds over the concat.
+        (
+            "kernel_kv_score",
+            "speed",
+            Op.make(
+                "mul",
+                Op.make("matmul", x, Op.make("concat", kn, kc, dim=-2)),
+                Const(0.125),
+            ),
+            ("kern_fuse_mm_scale",),
+        ),
+        # The sigmoid-gated residual — ``x + y·sigmoid(g)``: the
+        # highway gate shape; silu and addmul compete over the
+        # product.
+        (
+            "kernel_gate_res",
+            "speed",
+            Op.make("add", Op.make("mul", y, Op.make("sigmoid", g)), x),
+            ("kern_fuse_silu", "kern_fuse_addmul"),
+        ),
+        # The grouped dequant — ``x @ ((q-z)·s)``: the affine-weight
+        # spelling inside the GEMM operand.  No bank fold reaches it
+        # (``mul(sub, ·)`` is not a fusion site) — an honest flat row
+        # whose subterm tree feeds the mint.
+        (
+            "kernel_dequant_mm",
+            "speed",
+            Op.make(
+                "matmul",
+                x,
+                Op.make("mul", Op.make("sub", wq, zp), sc),
+            ),
+            (),
+        ),
+    )
+
+
 def _cases():
     x, y, w, b = _mk()
     s, d, v = _mk_decayed()
@@ -285,6 +620,10 @@ def _cases():
         "sub", x, Op.make("mean", x, dim=-1, keepdim=True)
     )
     return (
+        # The composed stratum leads the registry — the overnight
+        # loop's ``--episodes N`` slice reads this order and the
+        # single-op head gave the mint nothing to compose over.
+        *_mk_chain_cases(),
         (
             "kernel_silu",
             "speed",
@@ -555,6 +894,40 @@ def _cases():
                 Op.make("mul", y, b),
             ),
             ("kern_fuse_addmul", "kern_fuse_addmul2"),
+        ),
+        # The reduction+strength pair — ``sqrt(Σx²)``: the L2 norm
+        # spelling; the square fold reduces inside the reduce.
+        (
+            "kernel_l2norm",
+            "memory",
+            Op.make(
+                "sqrt",
+                Op.make(
+                    "sum",
+                    Op.make("pow", x, Const(2)),
+                    dim=-1,
+                    keepdim=True,
+                ),
+            ),
+            ("kern_square_strength",),
+        ),
+        # The strength chain whole — ``x² · (y/4)``: both reductions
+        # expose the left-nested product ``mul3`` folds — the
+        # three-law composition ``kernel_strength`` splits across
+        # two cases, spelled as one term.
+        (
+            "kernel_strength_mul",
+            "speed",
+            Op.make(
+                "mul",
+                Op.make("pow", x, Const(2)),
+                Op.make("div", y, Const(4.0)),
+            ),
+            (
+                "kern_square_strength",
+                "kern_div_recip",
+                "kern_fuse_mul3",
+            ),
         ),
         (
             "kernel_mixed",

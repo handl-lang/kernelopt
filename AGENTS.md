@@ -24,7 +24,7 @@ Nothing in this repo may leak into the parent's public docs/paper.
 - `scripts/train_kernel_prior.py` — match-oracle imitation +
   REINFORCE; prints the `weights.py` literal + held-out table.
 - `bench/` — measurement, not shipped code: `bench/discovery/kernel.py`
-  (28 kernel cases; `python -m bench.discovery.kernel`),
+  (44 kernel cases; `python -m bench.discovery.kernel`),
   `bench/limits/triton/` (the hand-Triton baseline; `triton`+CUDA
   only, declines honestly), `bench/limits/registry.py` (the minimal
   `BaselineSpec`/`BaselineCtx`/`SkipBaseline` slice the arm needs).
