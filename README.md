@@ -23,7 +23,7 @@ Contents:
     `python -m mlopt_kernel.play --domain kernel --deliver`.
 - `tests/` — `test_kernel.py` (laws, cost, sink, board, play domain).
 - `scripts/train_kernel_prior.py` — retrain + emit the baked prior.
-- `bench/` — the measured half: `bench/discovery/kernel.py` (the 16
+- `bench/` — the measured half: `bench/discovery/kernel.py` (the 44
   kernel cases — `python -m bench.discovery.kernel` from the repo
   root) and `bench/limits/triton/` (the hand-Triton field baseline;
   needs `triton` + CUDA, declines honestly without).
@@ -33,16 +33,17 @@ Contents:
 ## Wiring
 
 The substrate is consumed as **git+ssh deps on per-package
-subdirectories** of the (public) graphopt monorepo, pinned to
-`main` for now — see `[tool.uv.sources]` in `pyproject.toml`:
+subdirectories** of the split sibling repos, pinned to `main` for
+now — see `[tool.uv.sources]` in `pyproject.toml`:
 
-| dep | source |
-|---|---|
-| `mlopt-core` | `packages/mlopt-core` |
-| `mlopt-torch` | `packages/mlopt-torch` (transitive) |
-| `mlopt-orchestrator` | `packages/mlopt-orchestrator` (transitive) |
-| `gamekit` | `packages/gamekit` |
-| `mlopt-discovery` | `packages/mlopt-discovery` |
+| dep | repo | source |
+|---|---|---|
+| `mlopt-core` | `handl-lang/eqsat` | `packages/mlopt-core` |
+| `mlopt-orchestrator` | `handl-lang/eqsat` | `packages/mlopt-orchestrator` |
+| `mlopt-torch` | `handl-lang/graphopt` | `packages/mlopt-torch` |
+| `mlopt-carriers` | `handl-lang/graphopt` | `packages/mlopt-carriers` |
+| `mlopt-discovery` | `handl-lang/graphopt` | `packages/mlopt-discovery` |
+| `gamekit` | `handl-lang/gamekit` | `packages/gamekit` |
 
 ## Verify
 

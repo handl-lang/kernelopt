@@ -344,7 +344,7 @@ vs 291, `strength` 663 vs 292 — the folded region pays, the leftover
 pointwise launch does not.
 
 The bank then grew to 21 laws over three more measured arms
-(`notes/kernel-engineer-board.md`; the case suite is now 29).  The
+(`notes/kernel-engineer-board.md`; the case suite is now 44).  The
 residue rows closed — `kernel_fma` 566→~309 µs (≈/beats triton),
 `kernel_mixed` 493→308, `kernel_strength` 663→369 (7→1 launches,
 1.88×, ~90% of the hand kernel's 333) — the whole attention block
