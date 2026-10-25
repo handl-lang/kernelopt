@@ -673,6 +673,11 @@ class _KernelArena(og.OpenArena):
             self.error = f"mint: {type(e).__name__}: {e}"
         self.done = not self.pool
 
+    def _eval_term(self, i: int) -> Any:
+        """The term the candidate evaluation binds on — the case's."""
+        del i
+        return self.term
+
     def step(self, action: Any) -> tuple[Any, Any]:
         """Evaluate one candidate (``evaluate``) or end (``stop``)."""
         from gamekit.engine import Report
@@ -686,7 +691,10 @@ class _KernelArena(og.OpenArena):
             )
         i = action.params["i"]
         rec = _eval_cand(
-            self.pool[i], self.term, self._bank, self._lib_keys
+            self.pool[i],
+            self._eval_term(i),
+            self._bank,
+            self._lib_keys,
         )
         verdict = rec["verdict"]
         self.verdicts[i] = verdict
@@ -708,6 +716,291 @@ class _KernelArena(og.OpenArena):
             note=f"{verdict}:{self.pool[i].label}",
             detail=rec,
         )
+
+
+# ---------------------------------------------------------------------------
+#  the kernel-prim corpus arm — primitives minted for repeated manual shapes
+# ---------------------------------------------------------------------------
+#
+#  The ``--corpus kernel-prim`` mint: the shared
+#  ``mlopt_discovery.prim_mint.prim_pool`` machinery (promoted out of
+#  the parent's ``zoo-prim`` driver — one implementation, both
+#  domain repos wire their own hooks) anti-unifies recurring manual
+#  subgraphs out of the whole 44-case registry merged into one
+#  e-graph, keeps the shapes binding >= ``--xbind`` distinct cases
+#  that no kernel-lowerable op already denotes, and mints a NEW
+#  ``ksynop_<hash>`` primitive per shape whose denotation IS the
+#  spelled subgraph — the binding seats on the sink's own op table
+#  (``KernelSink`` lowers it like any fused op).  The emitted
+#  candidate is the fold ``pattern -> ksynop_*(args)`` carrying the
+#  ``ksynop_*.expand`` definitional premise, so the cert leg's
+#  anchored axiom set has what the bare bank lacks and the sieve's
+#  derivability gate stays underivable BY CONSTRUCTION — the fold is
+#  novel exactly as the upstream ``prim:synop_*`` folds are.
+
+
+def _prim_knobs(prim: dict | None = None) -> dict:
+    """The resolved mining window — defaults overridden by *prim*.
+
+    Same knob vocabulary as the upstream ``zoo-prim`` arm: the
+    ``min_ops``/``max_ops``/``cap``/``beam``/``max_expand`` bounds the
+    ``--prim-*`` flags write, ``bootstrap`` (``--prim-bootstrap`` —
+    seat the core-shipped ``prim:synop_*`` folds into the corpus
+    e-graph first, registering their denotations on the kernel table,
+    so mined shapes compose over machine-minted primitives),
+    ``family_mint``, ``depth`` and ``vocab`` — the semantics live in
+    :func:`mlopt_discovery.prim_mint.prim_pool`.  The resolved dict
+    is protocol-pinned (``protocol["prim"]``) and rides the case
+    record, so a resume's pool rebuild replays the identical hunt.
+    """
+    from mlopt_discovery import prim_mint as _pm
+
+    out = {
+        "min_ops": _pm.PRIM_MIN_OPS,
+        "max_ops": _pm.PRIM_MAX_OPS,
+        "cap": _pm.PRIM_CAP,
+        "beam": _pm.PRIM_BEAM,
+        "max_expand": _pm.PRIM_MAX_EXPAND,
+        "budget": _pm.PRIM_BUDGET,
+        "site_cap": _pm.PRIM_SITES,
+        "bootstrap": False,
+        "family_mint": True,
+        "depth": _pm.PRIM_DEPTH,
+        "vocab": True,
+    }
+    if prim:
+        out.update({k: v for k, v in prim.items() if v is not None})
+    return out
+
+
+def _denoted_shapes() -> frozenset:
+    """Alpha-normal keys of spellings a kernel-lowerable op denotes.
+
+    The kernel *denoted* hook for ``prim_mint.prim_pool``: the known
+    bank (kernel bank + kernel prior art + substrate surface) plus
+    the raw substrate prior art contribute their bare-call sides —
+    restricted to call ops the sink can actually lower
+    (``allowed_ops``): a shape named by an op outside the kernel
+    table is still a NEW primitive *for this domain*, so only
+    kernel-lowerable names count.  A mined shape in the result is
+    already named — minting ``ksynop_*`` for it would be a second
+    name, so the mint skips it and the funnel records the exclusion.
+    """
+    from mlopt_core.laws.priorart import PRIOR_ART_RULES
+    from mlopt_discovery import prim_mint as _pm
+
+    from bench.drivers.screen import novelty_sieve as ns
+    from mlopt_kernel.sink import kernel_ops
+
+    return _pm.denoted_alphas(
+        [*ns.known_bank(), *PRIOR_ART_RULES],
+        allowed_ops=kernel_ops(),
+    )
+
+
+def _prim_eval(a: Any, b: Any) -> str:
+    """The emit gate's fp64 truth — the ``KernelSink`` oracle's verdict.
+
+    The kernel *eval_pair* hook: ``_truth``'s ``equal`` counts a
+    verified site, ``unequal`` refuses the shape, and
+    ``indeterminate``/``skip`` are inconclusive (no equal site, no
+    measured refute — the gate drops the shape either way).
+    """
+    verdict, _note = _truth(a, b)
+    return verdict if verdict in ("equal", "unequal") else "skip"
+
+
+def _register_shipped() -> None:
+    """Seat the core ``synop*`` denotations on the kernel op table.
+
+    The bootstrap's *register_shipped* hook: each core-shipped
+    ``synop*`` op gets its ``expand`` premise's denotation
+    registered onto the sink's binding dict, so seated ``synop*``
+    enodes lower through ``KernelSink`` exactly like the minted
+    ``ksynop_*`` ops do.
+    """
+    from mlopt_core.laws import minted
+    from mlopt_discovery import prim_mint as _pm
+
+    from mlopt_kernel.sink import _table
+
+    tab = _table()
+    for op in minted.SYNOP_SHIPPED:
+        fold, expand = minted.prim_fold(op)
+        _pm.register_denotation(op, fold.rhs, expand.rhs, tab)
+
+
+def _prim_pool(
+    roots: dict,
+    k: int,
+    *,
+    cap: int,
+    budget: int,
+    site_cap: int,
+    min_ops: int,
+    max_ops: int,
+    beam: int,
+    max_expand: int,
+    bootstrap: bool,
+    family_mint: bool,
+    depth: int,
+    vocab: bool,
+) -> tuple:
+    """The kernel prim-mint pool — the codegen-domain hook wiring.
+
+    :func:`mlopt_discovery.prim_mint.prim_pool` under kernel hooks:
+    the sink's binding table (the ``ksynop_*`` denotations register
+    onto it, so every ``KernelSink``/``KernelExecutor`` seated on
+    the shared dict lowers them), :func:`_prim_eval` as the emit
+    gate's fp64 truth, the kernel bank's denoted set
+    (:func:`_denoted_shapes`), the ``ksynop`` prefix, and
+    :func:`_register_shipped` as the bootstrap's denotation seater.
+    """
+    from mlopt_discovery import prim_mint as _pm
+
+    from mlopt_kernel.sink import _table
+
+    return _pm.prim_pool(
+        roots,
+        k,
+        bindings=_table(),
+        eval_pair=_prim_eval,
+        denoted=_denoted_shapes(),
+        prefix="ksynop",
+        handler_bindings=_table(),
+        register_shipped=_register_shipped if bootstrap else None,
+        cap=cap,
+        budget=budget,
+        site_cap=site_cap,
+        min_ops=min_ops,
+        max_ops=max_ops,
+        beam=beam,
+        max_expand=max_expand,
+        bootstrap=bootstrap,
+        family_mint=family_mint,
+        depth=depth,
+        vocab=vocab,
+    )
+
+
+_PPOOL: dict = {}
+
+
+def _prim_pool_cached(k: int, prim: dict | None = None) -> tuple:
+    """The run's shared prim pool — minted once, sliced per episode.
+
+    Minting registers the ``ksynop_*`` ops + sink bindings, so
+    calling this before the episode loop is also what makes a
+    resume's rebuilt candidate cells evaluable again (names are
+    content-hashed — a rebuild re-registers byte-identical
+    bindings).  *prim* is the resolved mining window
+    (:func:`_prim_knobs`) — part of the cache key.
+    """
+    knobs = _prim_knobs(prim)
+    key = (k, tuple(sorted(knobs.items())))
+    if key not in _PPOOL:
+        roots = {n: t for n, _c, t, _f in _registry()}
+        _PPOOL[key] = _prim_pool(roots, k, **knobs)
+    return _PPOOL[key]
+
+
+def _prim_cases(
+    episodes: int, *, page: int, xbind: int, prim: dict | None
+) -> list:
+    """One case per pool page — the corpus-level mint, paged.
+
+    There is no per-case board on the prim arm: the episode boards
+    are ``page``-sized slices of the one shared pool, exactly as the
+    upstream ``zoo-prim``/``zoo-xmodule`` arms page theirs.  ``prim``
+    (the resolved window) and ``xbind`` ride the case record so a
+    resume's arena rebuild replays the identical hunt.
+    """
+    return [
+        {
+            "kernel": f"prim-page-{i:02d}",
+            "category": "prim",
+            "xpage": i,
+            "page": page,
+            "xbind": xbind,
+            "prim": dict(_prim_knobs(prim)),
+        }
+        for i in range(episodes)
+    ]
+
+
+class _PrimArena(_KernelArena):
+    """An ``OpenArena`` whose pool is one page of the prim mint.
+
+    The corpus-level pool (:func:`_prim_pool_cached`) is built once
+    per ``(xbind, knobs)`` and episodes slice ``page`` candidates off
+    it; ``meta[i]`` rides the ledger with the primitive's own
+    provenance (the minted ``ksynop_*`` name, the bound-case set,
+    the site-verify counts and the handler verdict).  ``step`` is
+    the kernel arena's own — only the evaluated term differs: the
+    fold's first bound case's term, read off the mint's module list.
+    """
+
+    def __init__(self, case: dict) -> None:
+        self.pool: list = []
+        self.meta: dict[int, dict] = {}
+        self.verdicts: dict[int, str] = {}
+        self.steps = 0
+        self.done = True
+        self._n_true = 0
+        self._n_useful = 0
+        self.error = ""
+        self.term: Any = None
+        self.fires: tuple = ()
+        self._bank: list = []
+        self._lib_keys: list = []
+        try:
+            cands, meta, _stats = _prim_pool_cached(
+                case.get("xbind", 2), case.get("prim")
+            )
+        except Exception as e:
+            self.error = f"mint: {type(e).__name__}: {e}"
+            return
+        page = case.get("page", DEFAULTS["page"])
+        lo = case.get("xpage", 0) * page
+        self.pool_total = len(cands)
+        self.pool = cands[lo : lo + page]
+        self.meta = {
+            i: meta[lo + i]
+            for i in range(len(self.pool))
+            if lo + i in meta
+        }
+        self._terms = {n: t for n, _c, t, _f in _registry()}
+        self.done = not self.pool
+
+    def _eval_term(self, i: int) -> Any:
+        """The first bound case's term — where the fold fires."""
+        mods = self.meta.get(i, {}).get("prim", {}).get("mods") or []
+        if mods:
+            return self._terms[mods[0]]
+        # no recorded module — fall back to any corpus subterm the
+        # fold binds (the emit gate guaranteed at least one).
+        for _n, t, *_r in _registry():
+            if _first_fire(self.pool[i].as_rule(), t) is not None:
+                return t
+        return _registry()[0][2]
+
+
+def _arena_for(case: dict, corpus: str, *, fuel: int = _COMPOSE_FUEL):
+    """The episode board for *case* on *corpus*."""
+    if corpus == "kernel-prim":
+        return _PrimArena(case)
+    return _KernelArena(case, fuel=fuel)
+
+
+def _mint_case(case: dict, meta: dict | None) -> str:
+    """The registered case the pay leg anchors on.
+
+    Prim folds mint corpus-wide — the pay leg's guaranteed site is
+    the fold's first bound case, read off the mint's module record;
+    the census/compose arm's is the episode's own case.
+    """
+    mods = (meta or {}).get("prim", {}).get("mods") or []
+    return mods[0] if mods else case["kernel"]
 
 
 # ---------------------------------------------------------------------------
@@ -1064,7 +1357,12 @@ def _leg_cert(rule: Any, inst: tuple | None) -> dict:
             "detail": "no instance to replay",
         }
     _src, lhs_i, rhs_i = inst
-    res = verify_law(lhs_i, rhs_i, [rule])
+    # the anchored axiom set: the candidate's own rule plus its
+    # declared premise closure (a ``prim:ksynop_*`` fold's
+    # ``ksynop_*.expand`` definitional premise — the upstream cert
+    # leg's union, verbatim).
+    axioms = [rule, *getattr(rule, "premises", ())]
+    res = verify_law(lhs_i, rhs_i, axioms)
     ok = bool(res.derivable and res.replayable)
     detail = (
         f"{res.direction} {res.witness_steps} steps "
@@ -1095,6 +1393,14 @@ def _admit(
     guard = _guard_transport_spec(rule)
     if guard is not None:
         law["guard"] = guard
+    premises = getattr(rule, "premises", None)
+    if premises:
+        # the cert leg's premise-anchored axiom names — the same
+        # honesty posture as ``law["guard"]``: record what the
+        # closure adds so an audit sees the anchor.  The premise
+        # objects themselves re-attach on the deterministic re-mint
+        # (``Proposal.premises`` → ``as_rule``).
+        law["premises"] = [r.name for r in premises]
     rec: dict[str, Any] = {
         "name": rule.name,
         "provenance": law_provenance(rule),
@@ -1242,6 +1548,9 @@ def run(
     arm_factory: Any = None,
     ctxs: list | None = None,
     bank: list | None = None,
+    corpus: str = "kernel",
+    prim: dict | None = None,
+    xbind: int = 2,
     log: Any = print,
 ) -> dict:
     """Run the loop against *ckpt* (an open ``_Ledger``); summarize.
@@ -1258,9 +1567,14 @@ def run(
 
     torch.manual_seed(seed)
     if cases is None:
-        cases = gen_cases(
-            seed, episodes, page=page, rounds=rounds, names=names
-        )
+        if corpus == "kernel-prim":
+            cases = _prim_cases(
+                episodes, page=page, xbind=xbind, prim=prim
+            )
+        else:
+            cases = gen_cases(
+                seed, episodes, page=page, rounds=rounds, names=names
+            )
     if ctxs is None:
         ctxs = ns.case_contexts()
     if bank is None:
@@ -1275,7 +1589,7 @@ def run(
         if ckpt.done(ekey):
             evals = ckpt.get(ekey)["evals"]
         else:
-            arena = _KernelArena(case, fuel=fuel)
+            arena = _arena_for(case, corpus, fuel=fuel)
             arena._bank = bank
             arena._lib_keys = lib_keys
             traj = engine.run_episode(arena, arm(i), budget)
@@ -1301,12 +1615,17 @@ def run(
                 continue
             if pool is None:
                 if arena is None:
-                    arena = _KernelArena(case, fuel=fuel)
+                    arena = _arena_for(case, corpus, fuel=fuel)
                     arena._bank = bank
                     arena._lib_keys = lib_keys
                 pool = arena.pool
             rule = pool[ev["i"]].as_rule()
-            rec = _admit(rule, referee, ctxs, case["kernel"])
+            rec = _admit(
+                rule,
+                referee,
+                ctxs,
+                _mint_case(case, arena.meta.get(ev["i"])),
+            )
             meta = arena.meta.get(ev["i"])
             if meta is not None:
                 rec["family"] = meta["family"]
@@ -1345,7 +1664,7 @@ def run(
             # (``missing_hooks``); the pool rebuilds deterministically.
             if pool is None:
                 if arena is None:
-                    arena = _KernelArena(case, fuel=fuel)
+                    arena = _arena_for(case, corpus, fuel=fuel)
                     arena._bank = bank
                     arena._lib_keys = lib_keys
                 pool = arena.pool
@@ -1678,6 +1997,40 @@ def main(argv: list[str] | None = None) -> int:
         help=f"append-only ledger (default {CKPT_PATH})",
     )
     ap.add_argument(
+        "--corpus",
+        choices=["kernel", "kernel-prim"],
+        default="kernel",
+        help="kernel: one episode per registered case; "
+        "kernel-prim: the prim mint — prim_mint anti-unifies the "
+        "merged registry, mints ksynop_* primitives per recurring "
+        "manual shape, and episodes page the shared pool",
+    )
+    ap.add_argument(
+        "--prim-min-ops",
+        type=int,
+        default=None,
+        help="kernel-prim only: mining window floor",
+    )
+    ap.add_argument(
+        "--prim-max-ops",
+        type=int,
+        default=None,
+        help="kernel-prim only: mining window cap",
+    )
+    ap.add_argument(
+        "--prim-cap",
+        type=int,
+        default=None,
+        help="kernel-prim only: pool size cap",
+    )
+    ap.add_argument(
+        "--xbind",
+        type=int,
+        default=2,
+        help="kernel-prim only: minimum distinct cases a minted "
+        "primitive must bind (the cross-case surface)",
+    )
+    ap.add_argument(
         "--resume",
         action="store_true",
         help="reuse the ledger's done cells (protocol-verified); "
@@ -1693,6 +2046,21 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if args.rounds < 0:
         ap.error("--rounds must be >= 0")
+    if args.corpus != "kernel-prim" and (
+        args.prim_min_ops is not None
+        or args.prim_max_ops is not None
+        or args.prim_cap is not None
+    ):
+        ap.error("--prim-* knobs require --corpus kernel-prim")
+    prim = {
+        k: v
+        for k, v in {
+            "min_ops": args.prim_min_ops,
+            "max_ops": args.prim_max_ops,
+            "cap": args.prim_cap,
+        }.items()
+        if v is not None
+    }
     if args.dry:
         for k, v in DRY.items():
             setattr(args, k, v)
@@ -1726,6 +2094,10 @@ def main(argv: list[str] | None = None) -> int:
         # emit gate or vocabulary must restart loudly.
         "mint": "kernel-corpus-compose",
         "vocab": _MINT_VOCAB,
+        "corpus": args.corpus,
+        "prim": _prim_knobs(prim)
+        if args.corpus == "kernel-prim"
+        else None,
         "dry": bool(args.dry),
     }
     if not args.resume and args.ckpt.exists():
@@ -1754,6 +2126,9 @@ def main(argv: list[str] | None = None) -> int:
         fuel=args.fuel,
         names=names,
         ckpt=ckpt,
+        corpus=args.corpus,
+        prim=prim or None,
+        xbind=args.xbind,
     )
 
     env = _env()
