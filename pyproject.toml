@@ -43,12 +43,12 @@ where = ["src"]
 # Pinned to the branch for now; move to a tag/rev once the upstream
 # surface settles.
 [tool.uv.sources]
-mlopt-core = { git = "ssh://git@github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", branch = "main" }
-mlopt-torch = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
-mlopt-orchestrator = { git = "ssh://git@github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
-mlopt-carriers = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
-gamekit = { git = "ssh://git@github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", branch = "main" }
-mlopt-discovery = { git = "ssh://git@github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
+mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", branch = "main" }
+mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
+mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
+mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
+gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", branch = "main" }
+mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
