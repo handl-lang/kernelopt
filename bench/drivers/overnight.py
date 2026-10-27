@@ -1021,6 +1021,33 @@ def _vars_of(t: Any) -> dict:
     return out
 
 
+def _leaf_inputs(*terms: Any) -> tuple[list, str | None]:
+    """Collect the leaves of *terms* as one feed list.
+
+    A kernel primitive denotes ONE operation, so a metavar must carry
+    one shape across the instance.  An anti-unified corpus mint can
+    bind the same name at two shapes (the kernel-prim arm hit 64 vs
+    128 at dim 2); feeding that instance unifies the metavar and the
+    sink then dies on the broadcast.  Return ``(inputs, note)`` —
+    ``note`` names the collision so the caller drops the instance and
+    the funnel records it, instead of the run dying on it.
+    """
+    leaves: dict = {}
+    for t in terms:
+        for name, var in _vars_of(t).items():
+            prev = leaves.get(name)
+            if prev is not None:
+                a = tuple(prev.typ.shape)
+                b = tuple(var.typ.shape)
+                if a != b:
+                    return [], (
+                        f"metavar shape collision: {name} {a} vs {b}"
+                    )
+            else:
+                leaves[name] = var
+    return [leaves[n] for n in sorted(leaves)], None
+
+
 def _truth(lhs: Any, rhs: Any) -> tuple[str, str]:
     """fp64 ``KernelSink`` eval of the concrete pair — eager bodies.
 
@@ -1035,9 +1062,9 @@ def _truth(lhs: Any, rhs: Any) -> tuple[str, str]:
     """
     import torch
 
-    leaves = _vars_of(lhs)
-    leaves.update(_vars_of(rhs))
-    inputs = [leaves[n] for n in sorted(leaves)]
+    inputs, note = _leaf_inputs(lhs, rhs)
+    if note is not None:
+        return "skip", note
     if sum(int(torch.Size(v.typ.shape).numel()) for v in inputs) > (
         _TRUTH_ELEM_CAP
     ):
@@ -1073,9 +1100,9 @@ def _verify_pair(a: Any, b: Any) -> bool | None:
     """
     import torch
 
-    leaves = _vars_of(a)
-    leaves.update(_vars_of(b))
-    inputs = [leaves[n] for n in sorted(leaves)]
+    inputs, note = _leaf_inputs(a, b)
+    if note is not None:
+        return None
     if sum(int(torch.Size(v.typ.shape).numel()) for v in inputs) > (
         _TRUTH_ELEM_CAP
     ):
