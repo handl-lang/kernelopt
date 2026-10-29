@@ -49,9 +49,13 @@ mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirec
 mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
 gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", branch = "main" }
 mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
+lib-kernel-ir = { path = "../lib-kernel-ir" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# lib-kernel-ir is a sibling repo (ADR-0160); until it is published, the
+# search tests read it from the working tree.
+pythonpath = ["src", "../lib-kernel-ir/src"]
 
 [tool.ty.environment]
 python-version = "3.13"
