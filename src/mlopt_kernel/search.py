@@ -1,6 +1,6 @@
 """Search over kernel IR terms: gate, bound, then measure.
 
-The order is not negotiable (ADR-0160 rules 4-6):
+The order is not negotiable (ADR-0165 rules 4-6):
 
 1. **Enumerate `Term`s.** Structure comes from the IR, not from a config
    grid: `split_k = 4` is four `split` terms with an equal composed
