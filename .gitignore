@@ -8,3 +8,6 @@ __pycache__/
 dist/
 build/
 bench/results/
+
+# myco worktree mount point (created by `myco init`)
+project/
