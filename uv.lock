@@ -7,6 +7,16 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "benchkit"
+version = "0.1.0.dev0"
+source = { git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fbenchkit&branch=main#046e1d0832fbc7cac3265009c9b74b74026ada3d" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "mlopt-core" },
+    { name = "torch" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -117,7 +127,7 @@ wheels = [
 [[package]]
 name = "gamekit"
 version = "0.1.0.dev0"
-source = { git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fgamekit&branch=main#d260eeeae86f8c74fbf68a01ecd3da5f72adfac3" }
+source = { git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fgamekit&branch=main#046e1d0832fbc7cac3265009c9b74b74026ada3d" }
 
 [[package]]
 name = "iniconfig"
@@ -301,6 +311,7 @@ name = "mlopt-kernel"
 version = "0.1.0.dev0"
 source = { editable = "." }
 dependencies = [
+    { name = "benchkit" },
     { name = "gamekit" },
     { name = "mlopt-core" },
     { name = "mlopt-discovery" },
@@ -324,6 +335,7 @@ probes = [
 
 [package.metadata]
 requires-dist = [
+    { name = "benchkit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fbenchkit&branch=main" },
     { name = "gamekit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fgamekit&branch=main" },
     { name = "mlopt-core", git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-core&branch=main" },
     { name = "mlopt-discovery", git = "https://github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-discovery&branch=main" },

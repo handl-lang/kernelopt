@@ -77,16 +77,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 import time
-import uuid
 from collections import Counter
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from benchkit.checkpoint import Checkpoint, new_manifest
 from gamekit import engine
 from gamekit.players import registry as players
 from mlopt_core import meta as meta_mod
@@ -202,14 +200,15 @@ _NOVELTY_ORDER = (
 
 
 # ---------------------------------------------------------------------------
-#  the ledger — an append-only, protocol-gated JSONL cell store
+#  the ledger — benchkit's append-only, protocol-gated JSONL cell store
 # ---------------------------------------------------------------------------
 #
-#  kernelopt ships no benchkit; this is the minimal slice of the
-#  upstream ``bench.benchkit.checkpoint`` contract the loop needs:
-#  a manifest-pinned file (protocol must match exactly for entries to
-#  replay), atomic O_APPEND record writes, and a torn-tail tolerance
-#  so a crash costs one cell, not the run.
+#  The resume store is ``benchkit.checkpoint.Checkpoint`` (promoted to
+#  handl-lang/gamekit ``packages/benchkit``): a manifest-pinned file
+#  (protocol must match exactly for entries to replay), atomic
+#  O_APPEND record writes, and a torn-tail tolerance so a crash costs
+#  one cell, not the run.  ``_manifest`` keeps this lane's provenance
+#  spelling — the repo-root ``git`` probe, not the caller's cwd.
 
 
 def _git(*args: str) -> str:
@@ -228,121 +227,21 @@ def _git(*args: str) -> str:
 
 def _manifest(protocol: dict[str, Any]) -> dict[str, Any]:
     """A run manifest — protocol pin plus provenance."""
-    return {
-        "_manifest": True,
-        "lane": "overnight-kernel",
-        "run_id": uuid.uuid4().hex[:12],
-        "created_utc": datetime.now(UTC).isoformat(timespec="seconds"),
-        "protocol": dict(protocol),
-        "provenance": {
+    return new_manifest(
+        "overnight-kernel",
+        protocol,
+        env={
             "git_sha": _git("rev-parse", "--short", "HEAD")
             or "unknown",
             "git_dirty": bool(_git("status", "--porcelain")),
             "device": "cpu",
         },
-    }
+    )
 
 
-def _read_jsonl(path: Path) -> list[dict]:
-    """Read the ledger; a torn last line (the crash's cell) drops."""
-    out: list[dict] = []
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError:
-            break  # torn tail — everything before it is intact
-    return out
-
-
-def _append_jsonl(path: Path, record: dict) -> None:
-    """One ``O_APPEND`` write — lanes sharing a file can't interleave."""
-    line = json.dumps(record, default=str) + "\n"
-    fd = os.open(path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o644)
-    try:
-        os.write(fd, line.encode())
-    finally:
-        os.close(fd)
-
-
-class _Ledger:
-    """The resume store: manifest + ``{key: record}`` cells.
-
-    ``open`` reuses stored entries only when the stored manifest's
-    ``protocol`` equals the caller's — a mismatch (different
-    seed/knobs/corpus) warns and restarts the file, never silently
-    merges two runs' cells.  A git-sha drift warns but reuses.
-    """
-
-    def __init__(
-        self, path: Path, manifest: dict, entries: dict | None = None
-    ) -> None:
-        self.path = Path(path)
-        self.manifest = manifest
-        self._entries: dict[tuple, dict] = dict(entries or {})
-
-    @classmethod
-    def open(
-        cls, path: Path, manifest: dict, *, warn: Any = None
-    ) -> _Ledger:
-        warn = warn or (lambda m: print(m, file=sys.stderr))
-        path = Path(path)
-        if path.exists() and path.stat().st_size:
-            records = _read_jsonl(path)
-            stored = (
-                records[0]
-                if records and records[0].get("_manifest")
-                else None
-            )
-            want = json.loads(
-                json.dumps(manifest.get("protocol"), default=str)
-            )
-            if stored is not None and stored.get("protocol") == want:
-                cur = manifest["provenance"].get("git_sha")
-                old = stored.get("provenance", {}).get("git_sha")
-                if cur and old and cur != old:
-                    warn(
-                        f"ledger {path}: git sha moved "
-                        f"{old} -> {cur} — reusing cells anyway"
-                    )
-                return cls(
-                    path,
-                    stored,
-                    {
-                        tuple(r["key"]): r["record"]
-                        for r in records[1:]
-                        if "key" in r and "record" in r
-                    },
-                )
-            warn(f"ledger {path}: protocol differs — restarting")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        # restart = truncate: the file reopens with only the manifest
-        path.write_text(json.dumps(manifest, default=str) + "\n")
-        return cls(path, manifest)
-
-    def done(self, key: tuple) -> bool:
-        return tuple(key) in self._entries
-
-    def get(self, key: tuple) -> dict | None:
-        return self._entries.get(tuple(key))
-
-    def record(self, key: tuple, record: dict) -> None:
-        key = tuple(key)
-        _append_jsonl(
-            self.path,
-            {
-                "key": list(key),
-                "record": dict(record),
-                "ts": datetime.now(UTC).isoformat(timespec="seconds"),
-            },
-        )
-        self._entries[key] = dict(record)
-
-    @property
-    def entries(self) -> dict[tuple, dict]:
-        return self._entries
+#: The lane's resume store — ``benchkit.checkpoint.Checkpoint`` under
+#: the name the loop's call sites and tests already use.
+_Ledger = Checkpoint
 
 
 # ---------------------------------------------------------------------------

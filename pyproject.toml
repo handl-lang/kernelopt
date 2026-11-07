@@ -11,6 +11,7 @@ dependencies = [
     "mlopt-core",
     "mlopt-discovery",
     "gamekit",
+    "benchkit",
     "torch>=2.0",
 ]
 
@@ -48,6 +49,7 @@ mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory
 mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
 mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
 gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", branch = "main" }
+benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", branch = "main" }
 mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
 lib-kernel-ir = { path = "../lib-kernel-ir" }
 

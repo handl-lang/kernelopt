@@ -28,8 +28,12 @@ Nothing in this repo may leak into the parent's public docs/paper.
 - `bench/` — measurement, not shipped code: `bench/discovery/kernel.py`
   (44 kernel cases; `python -m bench.discovery.kernel`),
   `bench/limits/triton/` (the hand-Triton baseline; `triton`+CUDA
-  only, declines honestly), `bench/limits/registry.py` (the minimal
-  `BaselineSpec`/`BaselineCtx`/`SkipBaseline` slice the arm needs).
+  only, declines honestly), `bench/limits/registry.py` (re-exports the
+  shared `benchkit.baselines` contract types the arm needs).
+- `bench/drivers/overnight.py` — the kernel overnight loop; its
+  resume ledger is `benchkit.checkpoint.Checkpoint` (the shared
+  harness promoted to `handl-lang/gamekit` `packages/benchkit`,
+  consumed as the `benchkit` git dep below).
 - `docs/`, `notes/` — the audit + design note moved out of the
   parent (they are why this repo is private).
 
