@@ -33,7 +33,6 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 import torch
-
 from lib_kernel_ir import Cost, Term
 
 __all__ = [
@@ -80,10 +79,11 @@ class SearchResult:
 
     @property
     def pct_of_roofline(self) -> float:
+        """Return the achieved share of the bandwidth roofline."""
         return 100.0 * self.roofline_us / self.us if self.us else 0.0
 
     def routing_row(self) -> dict:
-        """The row a dispatcher would read: operator → kernel + config."""
+        """Return the row a dispatcher reads: operator → kernel + config."""
         return {
             "operator": self.operator,
             "term": self.chosen.label if self.chosen else None,
@@ -94,6 +94,7 @@ class SearchResult:
         }
 
     def to_dict(self) -> dict:
+        """Return the full result row, routing fields plus rejects."""
         return {
             **self.routing_row(),
             "roofline_us": round(self.roofline_us, 2),
@@ -111,7 +112,7 @@ class SearchResult:
 def roofline_bound_us(
     bytes_moved: float, bandwidth_gbps: float, overhead_us: float = 0.0
 ) -> float:
-    """The floor a candidate cannot beat: bytes ÷ bandwidth + overhead."""
+    """Compute the floor a candidate cannot beat: bytes ÷ bandwidth + overhead."""
     if bandwidth_gbps <= 0:
         raise ValueError("bandwidth_gbps must be positive")
     return bytes_moved / (bandwidth_gbps * 1e9) * 1e6 + overhead_us
@@ -151,7 +152,7 @@ def search(
         # wrong thing, so its number is not admissible.
         try:
             term_cost: Cost = cand.term.cost({})
-        except Exception:  # noqa: BLE001 - cost is optional metadata
+        except Exception:
             term_cost = Cost()
         if term_cost.launches and term_cost.bytes_moved:
             pass  # priced; no ranking is done with it (rule 6)
@@ -159,7 +160,7 @@ def search(
         # 3. the gate, against the incumbent only.
         try:
             out = cand.build()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             rejected.append(
                 Rejected(
                     cand.label, "failed to run", f"{type(exc).__name__}"

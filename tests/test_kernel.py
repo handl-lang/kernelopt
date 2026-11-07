@@ -83,37 +83,31 @@ def _rmsnorm_term(eps=Const(1e-6), power=Const(2), keepdim=True):
 
 class TestLaws:
     def test_bank_shape(self):
-        """Twenty-eight codegen laws; the fused ops take leaf children."""
-        assert [r.name for r in KERNEL_RULES] == [
-            "kern_fuse_silu",
-            "kern_fuse_softsign",
-            "kern_fuse_addmul",
-            "kern_fuse_swiglu",
-            "kern_fuse_silu_sigmoid",
-            "kern_fuse_addmul_tanh",
-            "kern_fuse_addmul2",
-            "kern_fuse_mul3",
-            "kern_fuse_softmax",
-            "kern_fuse_softmax_mm",
-            "kern_fuse_sdpa",
-            "kern_fuse_sdpa_cap",
-            "kern_fuse_sdpa_mask",
-            "kern_fuse_sdpa_gqa",
-            "kern_fuse_layernorm",
-            "kern_fuse_rmsnorm",
-            "kern_fuse_mm_bias",
-            "kern_fuse_mm_scale",
-            "kern_fuse_mm_scale_bias",
-            "kern_fuse_mm_gelu",
-            "kern_fuse_om_decayed",
-            "kern_fuse_chunk_scan",
-            "kern_fuse_chunk_scan_3",
-            "kern_fuse_chunk_scan_4",
-            "kern_fuse_chunk_scan_5",
-            "kern_fuse_chunk_scan_6",
-            "kern_square_strength",
-            "kern_div_recip",
-        ]
+        """The bank is a vocabulary cover, not a census.
+
+        Bank growth is additive, so the pin is the invariant set:
+        unique rule names, no rule mints an undeclared kernel op,
+        and every declared fused/scheduled op is minted by some rule
+        (a vocabulary op without a law is dead weight; a law minting
+        an undeclared op is an unpriced launch).
+        """
+        from mlopt_kernel.laws import (
+            FUSED_KERNEL_OPS,
+            SCHEDULED_KERNEL_OPS,
+        )
+
+        names = [r.name for r in KERNEL_RULES]
+        assert names and len(names) == len(set(names))
+        minted = {
+            r.rhs.op for r in KERNEL_RULES if isinstance(r.rhs, Op)
+        }
+        fused_minted = {
+            op
+            for op in minted
+            if op.startswith("kf_") or op in SCHEDULED_KERNEL_OPS
+        }
+        assert fused_minted <= FUSED_KERNEL_OPS | SCHEDULED_KERNEL_OPS
+        assert minted >= FUSED_KERNEL_OPS | SCHEDULED_KERNEL_OPS
 
     def test_fuse_fires_and_extracts(self):
         """``mul(a, sigmoid(b))`` gains an extractable ``kf_silu``."""
@@ -1380,7 +1374,9 @@ class TestBoard:
 class TestPlayDomain:
     def test_registered_and_playable(self):
         """The kernel domain registers; scripted plays an episode."""
-        import mlopt_kernel.play  # noqa: F401 — the import is the registration
+        import mlopt_kernel.play
+
+        mlopt_kernel.play.register()
         from gamekit import engine
         from mlopt_discovery import play
 
@@ -1391,7 +1387,9 @@ class TestPlayDomain:
 
     def test_linear_plays_with_shipped_prior(self):
         """The registered linear arm plays kernel under KERNEL_SPEC."""
-        import mlopt_kernel.play  # noqa: F401 — seats domain + players
+        import mlopt_kernel.play
+
+        mlopt_kernel.play.register()
         from gamekit import engine
         from gamekit.players import registry
         from mlopt_discovery import play
@@ -1405,7 +1403,9 @@ class TestPlayDomain:
 
     def test_playbook_registry_seat(self):
         """``registry.make("playbook", "kernel")`` — the external make."""
-        import mlopt_kernel.play  # noqa: F401 — seats the players
+        import mlopt_kernel.play
+
+        mlopt_kernel.play.register()
         from gamekit import engine
         from gamekit.players import registry
         from mlopt_discovery import play
@@ -1419,7 +1419,9 @@ class TestPlayDomain:
 
     def test_deliver_verifies(self):
         """--deliver lowers the extraction and verifies it."""
-        import mlopt_kernel.play  # noqa: F401 — the import is the registration
+        import mlopt_kernel.play
+
+        mlopt_kernel.play.register()
         from gamekit import engine
         from mlopt_discovery import play
 

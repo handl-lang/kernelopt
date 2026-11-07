@@ -43,6 +43,8 @@ from gamekit.players import LearnedPlayer
 from mlopt_kernel import play as kplay
 from mlopt_kernel.weights import KERNEL_PLAYER_WEIGHTS
 
+kplay.register()  # seat the kernel domain + players explicitly
+
 #: Defaults — the kernel domain's own horizon and case stream.
 TRAIN_CASES = 64
 EVAL_CASES = 32

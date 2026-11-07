@@ -1,5 +1,5 @@
 # ruff: noqa: RUF002 — math notation in docstrings.
-"""``mlopt_kernel.play`` — the ``kernel`` domain, seated by import.
+"""``mlopt_kernel.play`` — the ``kernel`` domain, explicitly seated.
 
 The kernelopt board (plan 0032 phases 3–4): candidates are
 codegen-law applications — named fused-kernel ops and strength
@@ -13,11 +13,15 @@ flat boards; ``deliver`` lowers the winning extraction through
 verify-first.  The design note is
 ``notes/kernel-engineer-board.md`` in this repo.
 
-This module is the *plugin*: importing it registers the domain into
+This module is the *plugin*: :func:`register` seats the domain into
 :mod:`mlopt_discovery.play`'s ``DOMAINS`` (through the public
-:func:`mlopt_discovery.play.spec_domain` seam) and seats the kernel
+:func:`mlopt_discovery.play.spec_domain` seam) and the kernel
 board's players into the gamekit registry (through
-:func:`gamekit.players.registry.register_player`).  Run the game::
+:func:`gamekit.players.registry.register_player`).  Registration is
+explicit — importing this module mutates nothing; ``main`` calls
+``register()`` itself, and programmatic consumers (the prior
+trainer, the transfer driver, tests) call it at their entry point.
+Run the game::
 
     python -m mlopt_kernel.play --domain kernel \
         --train-cases 40 --eval-cases 10 --budget 8
@@ -54,6 +58,7 @@ __all__ = [
     "KERNEL_FEATURES",
     "KERNEL_SPEC",
     "main",
+    "register",
 ]
 
 
@@ -366,11 +371,6 @@ KERNEL_FEATURES: tuple = (
     ),
 )
 
-register_part("kernel:state", lambda: StateBroadcast(_kernel_state))
-register_part("kernel:action", lambda: ActionFeats(_kernel_act))
-register_part("kernel:rel", lambda: RelFeats(_kernel_rel))
-register_legal("kernel", _kernel_legal)
-
 #: The kernel spec — intercept, progress/improvement/site broadcast,
 #: the match interaction, and the rule bucket; the shipped prior is
 #: ``mlopt_kernel.weights.KERNEL_PLAYER_WEIGHTS`` (match-oracle
@@ -455,24 +455,17 @@ def _kernel_deliver(board: Any, case: Any, traj: Any) -> dict:
 
 
 # ---------------------------------------------------------------------------
-#  Registration — the phase-4 plugin seam
+#  Registration — the phase-4 plugin seam, made explicit
 # ---------------------------------------------------------------------------
 #
-#  Importing this module is the registration: the domain seats itself
-#  into ``play.DOMAINS`` and the kernel board's players into the
-#  gamekit registry.  ``linear*``/``random`` need no ``make`` — their
-#  shipped factories are spec-driven (``linear`` reads
-#  ``DOMAINS["kernel"].spec``; ``random`` is uniform); ``playbook``
-#  supplies its own because the scripted line lives where the domain
-#  lives.
-
-DOMAINS["kernel"] = spec_domain(
-    _kernel_cases,
-    _kernel_board,
-    KERNEL_SPEC,
-    scripted=_scripted_kernel,
-    deliver=_kernel_deliver,
-)
+#  ``register()`` is the only place the domain seats itself: the
+#  feature/legal parts, ``play.DOMAINS["kernel"]``, and the kernel
+#  board's players into the gamekit registry.  ``linear*``/``random``
+#  need no ``make`` — their shipped factories are spec-driven
+#  (``linear`` reads ``DOMAINS["kernel"].spec``; ``random`` is
+#  uniform); ``playbook`` supplies its own because the scripted line
+#  lives where the domain lives.  Idempotent — the gamekit seams
+#  overwrite by name — so every entry point may call it.
 
 
 def _playbook_make(
@@ -484,68 +477,84 @@ def _playbook_make(
     return lambda i: _scripted_kernel()
 
 
-register_player(
-    PlayerSpec(
-        name="linear",
-        kind="linear",
-        boards=("kernel",),
-        schema="the kernel DomainSpec row — KERNEL_SPEC",
-        train="scripts/train_kernel_prior.py",
-        artifact="mlopt_kernel.weights.KERNEL_PLAYER_WEIGHTS",
-        record="kernel 0.646 held-out (greedy) — beats scripted 0.276",
+def register() -> None:
+    """Seat the kernel domain and its players — call, don't import."""
+    register_part("kernel:state", lambda: StateBroadcast(_kernel_state))
+    register_part("kernel:action", lambda: ActionFeats(_kernel_act))
+    register_part("kernel:rel", lambda: RelFeats(_kernel_rel))
+    register_legal("kernel", _kernel_legal)
+
+    DOMAINS["kernel"] = spec_domain(
+        _kernel_cases,
+        _kernel_board,
+        KERNEL_SPEC,
+        scripted=_scripted_kernel,
+        deliver=_kernel_deliver,
     )
-)
-register_player(
-    PlayerSpec(
-        name="linear-greedy",
-        kind="linear",
-        boards=("kernel",),
-        schema="same as ``linear`` — argmax decode",
-        train="scripts/train_kernel_prior.py",
-        artifact="mlopt_kernel.weights.KERNEL_PLAYER_WEIGHTS",
-        record="kernel 0.646 held-out — the shipped v2 prior",
-        variant={"greedy": True},
+
+    register_player(
+        PlayerSpec(
+            name="linear",
+            kind="linear",
+            boards=("kernel",),
+            schema="the kernel DomainSpec row — KERNEL_SPEC",
+            train="scripts/train_kernel_prior.py",
+            artifact="mlopt_kernel.weights.KERNEL_PLAYER_WEIGHTS",
+            record="kernel 0.646 held-out (greedy) — beats scripted 0.276",
+        )
     )
-)
-register_player(
-    PlayerSpec(
-        name="linear-cold",
-        kind="linear",
-        boards=("kernel",),
-        schema="same as ``linear`` — ``weights={}``",
-        train="— (the untrained control)",
-        artifact="— (the point is no weights)",
-        record="kernel cold start — the control the prior must beat",
-        variant={"cold": True},
+    register_player(
+        PlayerSpec(
+            name="linear-greedy",
+            kind="linear",
+            boards=("kernel",),
+            schema="same as ``linear`` — argmax decode",
+            train="scripts/train_kernel_prior.py",
+            artifact="mlopt_kernel.weights.KERNEL_PLAYER_WEIGHTS",
+            record="kernel 0.646 held-out — the shipped v2 prior",
+            variant={"greedy": True},
+        )
     )
-)
-register_player(
-    PlayerSpec(
-        name="random",
-        kind="chance",
-        boards=("kernel",),
-        schema="— (no features; the move is a uniform draw)",
-        train="— (nothing to train)",
-        artifact="— (no weights)",
-        record="kernel -0.045 held-out reward/ep — the floor",
+    register_player(
+        PlayerSpec(
+            name="linear-cold",
+            kind="linear",
+            boards=("kernel",),
+            schema="same as ``linear`` — ``weights={}``",
+            train="— (the untrained control)",
+            artifact="— (the point is no weights)",
+            record="kernel cold start — the control the prior must beat",
+            variant={"cold": True},
+        )
     )
-)
-register_player(
-    PlayerSpec(
-        name="playbook",
-        kind="scripted",
-        boards=("kernel",),
-        schema="— (a fixed line, not a scorer)",
-        train="— (hand-written; nothing to train)",
-        artifact="— (no weights)",
-        record="kernel 0.276 held-out reward/ep — matching-head-first",
-    ),
-    make=_playbook_make,
-)
+    register_player(
+        PlayerSpec(
+            name="random",
+            kind="chance",
+            boards=("kernel",),
+            schema="— (no features; the move is a uniform draw)",
+            train="— (nothing to train)",
+            artifact="— (no weights)",
+            record="kernel -0.045 held-out reward/ep — the floor",
+        )
+    )
+    register_player(
+        PlayerSpec(
+            name="playbook",
+            kind="scripted",
+            boards=("kernel",),
+            schema="— (a fixed line, not a scorer)",
+            train="— (hand-written; nothing to train)",
+            artifact="— (no weights)",
+            record="kernel 0.276 held-out reward/ep — matching-head-first",
+        ),
+        make=_playbook_make,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
     """Delegate to ``mlopt_discovery.play.main`` — the domain is seated."""
+    register()
     from mlopt_discovery.play import main as _main
 
     return _main(argv)

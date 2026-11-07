@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from mlopt_discovery import play
 
-import mlopt_kernel.play  # noqa: F401 — seats the kernel domain
+import mlopt_kernel.play
 from bench.drivers.policy import transfer
 from mlopt_kernel.weights import KERNEL_PLAYER_WEIGHTS
+
+mlopt_kernel.play.register()  # seat the kernel domain explicitly
 
 
 class TestOverlapMath:

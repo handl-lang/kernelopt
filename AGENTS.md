@@ -14,12 +14,14 @@ Nothing in this repo may leak into the parent's public docs/paper.
   — the `gamekit.engine.Board` episode), `weights`
   (`KERNEL_PLAYER_WEIGHTS` — the baked prior, retrain via
   `scripts/train_kernel_prior.py`), `play` (the domain plugin).
-- `mlopt_kernel.play` is the seam: importing it registers `kernel`
+- `mlopt_kernel.play` is the seam: `play.register()` seats `kernel`
   into `mlopt_discovery.play.DOMAINS` (`play.spec_domain`) and seats
   `linear`/`linear-greedy`/`linear-cold`/`random`/`playbook` on the
   kernel board (`gamekit.players.registry.register_player` — the
   spec-driven factories need no `make`; `playbook` supplies its own
-  because the scripted line lives here).
+  because the scripted line lives here).  Registration is explicit —
+  importing the module mutates nothing; `main()` calls `register()`
+  itself and programmatic consumers call it at their entry point.
 - `tests/` — the kernel suite (`test_kernel.py`).
 - `scripts/train_kernel_prior.py` — match-oracle imitation +
   REINFORCE; prints the `weights.py` literal + held-out table.

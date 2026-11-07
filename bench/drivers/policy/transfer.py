@@ -57,8 +57,10 @@ from gamekit import engine
 from gamekit.players import DomainSpec, LearnedPlayer
 from mlopt_discovery import lawdata, play
 
-import mlopt_kernel.play  # noqa: F401 — seats the kernel domain
+import mlopt_kernel.play
 from mlopt_kernel.weights import KERNEL_PLAYER_WEIGHTS
+
+mlopt_kernel.play.register()  # seat the kernel domain explicitly
 
 #: Held-out stream seed offset — the ``play``/leaderboard convention.
 HELD_OUT_OFFSET = 7919
