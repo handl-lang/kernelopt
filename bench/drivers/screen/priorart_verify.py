@@ -198,6 +198,30 @@ CASES: dict[str, list[dict]] = {
             "$attr:D": -1,
         }
     ],
+    # the masked denotation — the enum's independent leaves rarely
+    # produce a score-compatible additive operand.
+    "pa_kf_sdpa_mask_expand": [
+        {
+            "a": _v("a", 4, 4),
+            "w": _v("w", 4, 4),
+            "s": Const(0.5),
+            "m": _v("m", 4, 4),
+            "v": _v("v", 4, 4),
+            "$attr:D": -1,
+        }
+    ],
+    # the gqa denotation — 8 query heads over 4 kv heads, the repeat
+    # count a tuple the enum's scalar attr domain never reaches.
+    "pa_kf_sdpa_gqa_expand": [
+        {
+            "a": _v("a", 8, 4, 4),
+            "w": _v("w", 4, 4, 4),
+            "s": Const(0.5),
+            "v": _v("v", 4, 4, 4),
+            "$attr:D": -1,
+            "$attr:GR": (2, 1, 1),
+        }
+    ],
 }
 
 

@@ -1,7 +1,7 @@
 # ruff: noqa: RUF001, RUF002, RUF003 — math notation (≡, σ, −, ·) in docstrings.
 """The codegen law bank — schedule-level rewrites over the IR.
 
-Not a language: twenty-six laws.  Nineteen fold spelled
+Not a language: twenty-eight laws.  Twenty-one fold spelled
 op-compositions into *named fused-kernel ops* (``FUSED_KERNEL_OPS``
 — the kernel vocabulary the
 :class:`~mlopt_kernel.sink.KernelSink` lowers as one compiled
@@ -24,8 +24,9 @@ epilogues a template kernel absorbs (``kf_mm_bias``,
 ``kf_mm_scale``, ``kf_mm_sb``, ``kf_mm_gelu``).  Deeper folds
 reach toward real-module chains — ``kf_softmax_mm`` (the
 ``softmax(qk)·v`` two-step attention chain) and ``kf_sdpa`` (the
-whole ``softmax(mm·s)·v`` block, plain or ``tanh`` soft-capped,
-folded to a single launch — the un-folded-matmuls gap the last
+whole ``softmax(mm·s)·v`` block — plain, ``tanh`` soft-capped,
+additive-masked, or ``enable_gqa`` head-expanded — folded to a
+single launch, the un-folded-matmuls gap the last
 measured arm named) — plus the
 second-generation residue family the measured triton gap named:
 ``kf_addmul_tanh`` and ``kf_silu_sigmoid`` fold the pointwise op a
@@ -90,6 +91,8 @@ __all__ = [
     "kern_fuse_rmsnorm",
     "kern_fuse_sdpa",
     "kern_fuse_sdpa_cap",
+    "kern_fuse_sdpa_gqa",
+    "kern_fuse_sdpa_mask",
     "kern_fuse_silu",
     "kern_fuse_silu_sigmoid",
     "kern_fuse_softmax",
@@ -337,6 +340,80 @@ kern_fuse_sdpa_cap = R(
     law="Soft-capped attention fold: matmul(softmax(tanh(mm·s)), v) "
     "lowers as one fused kernel — the bounded-logit spelling "
     "(Gemma-2 soft-capping) folded whole, cap flagging the tanh.",
+)
+
+
+# The real-model sdpa variants — the spellings the bank could not yet
+# name.  ``kern_fuse_sdpa_mask`` covers the additive-mask site
+# (``softmax(mm·s + m)·v`` — causal and padding masks materialise as
+# the additive operand); the mask becomes the composite's fifth
+# argument, flagged by the ``mask`` attr.  ``kern_fuse_sdpa_gqa``
+# covers the ``enable_gqa`` spelling: k/v head-expanded by a
+# ``repeat`` the fused op carries as the ``gqa`` attr instead of
+# materialising the repeated operands — the shared ``GR`` metavariable
+# pins both expansions to the same group count.
+def _sdp_mask_site(score: Op) -> Op:
+    """``matmul(softmax(score + m), v)`` — the additive-mask site."""
+    u = Op.make("add", score, "m")
+    return Op.make(
+        "matmul",
+        Op.make(
+            "div",
+            Op.make("exp", u),
+            Op.make("sum", Op.make("exp", u), dim="RD", keepdim="RK"),
+        ),
+        "v",
+    )
+
+
+kern_fuse_sdpa_mask = R(
+    "kern_fuse_sdpa_mask",
+    _sdp_mask_site(_sdp_score()),
+    Op.make("kf_sdpa", "a", "w", "s", "m", "v", dim="SD", mask=True),
+    cond=_COND_SOFTMAX_SITE,
+    dspec={"SD": ("attr0", "RD")},
+    law="Masked-attention fold: matmul(softmax(mm·s + m), v) lowers "
+    "as one fused kernel — the additive-mask spelling (causal masks "
+    "materialise as the mask operand) folded whole, mask flagging "
+    "the fifth argument.",
+)
+
+
+def _sdp_gqa_site() -> Op:
+    """``matmul(softmax(mul(mm(a, w·g), s)), v·g)`` — the GQA site."""
+    score = Op.make(
+        "mul",
+        Op.make(
+            "matmul",
+            "a",
+            Op.make("repeat", "w", repeats="GR"),
+        ),
+        "s",
+    )
+    return Op.make(
+        "matmul",
+        Op.make(
+            "div",
+            Op.make("exp", score),
+            Op.make(
+                "sum", Op.make("exp", score), dim="RD", keepdim="RK"
+            ),
+        ),
+        Op.make("repeat", "v", repeats="GR"),
+    )
+
+
+kern_fuse_sdpa_gqa = R(
+    "kern_fuse_sdpa_gqa",
+    _sdp_gqa_site(),
+    Op.make("kf_sdpa", "a", "w", "s", "v", dim="SD", gqa="GR"),
+    cond=_COND_SOFTMAX_SITE,
+    dspec={"SD": ("attr0", "RD")},
+    law="Grouped-query attention fold: matmul(softmax(mm(a, w·g)·s), "
+    "v·g) lowers as one fused kernel — the enable_gqa spelling whose "
+    "k/v head expansion the fused op carries as the gqa attr rather "
+    "than materialising the repeated operands (GR pins both repeats "
+    "to the same group count).",
 )
 
 
@@ -595,6 +672,8 @@ KERNEL_RULES: tuple[Rewrite, ...] = (
     kern_fuse_softmax_mm,
     kern_fuse_sdpa,
     kern_fuse_sdpa_cap,
+    kern_fuse_sdpa_mask,
+    kern_fuse_sdpa_gqa,
     kern_fuse_layernorm,
     kern_fuse_rmsnorm,
     kern_fuse_mm_bias,

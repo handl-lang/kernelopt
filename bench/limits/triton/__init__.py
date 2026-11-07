@@ -402,6 +402,44 @@ def _triton_sdpa_cap():
     return run
 
 
+def _triton_sdpa_mask():
+    """The masked-attention pipeline: mm·s + m → softmax → mm."""
+    mm = _triton_mm(None, bias=False)
+    mm_scale = _triton_mm(0.25, bias=False)
+    sm = _triton_softmax()
+
+    def run(x, w, m):
+        return mm(sm(mm_scale(x, w) + m), w)
+
+    return run
+
+
+def _triton_sdpa_gqa():
+    """The grouped-query pipeline: repeat k/v → per-head mm·s→sm→mm.
+
+    The composed kernels are 2-D, so the batched site unrolls over
+    heads — the same hand launches a practitioner loops when the
+    fused composite runs the whole block per dispatch.
+    """
+    import torch
+
+    mm = _triton_mm(None, bias=False)
+    mm_scale = _triton_mm(0.25, bias=False)
+    sm = _triton_softmax()
+
+    def run(q, k, v):
+        kr = k.repeat(2, 1, 1)
+        vr = v.repeat(2, 1, 1)
+        return torch.stack(
+            [
+                mm(sm(mm_scale(q[i], kr[i])), vr[i])
+                for i in range(q.shape[0])
+            ]
+        )
+
+    return run
+
+
 def _triton_om_decayed():
     """A batched tiled ``(s ⊙ d) @ v`` — the fused decayed element.
 
@@ -514,6 +552,8 @@ _KERNEL_BUILDERS = {
     "kernel_softmax_mm": _triton_softmax_mm,
     "kernel_sdpa": _triton_sdpa,
     "kernel_sdpa_cap": _triton_sdpa_cap,
+    "kernel_sdpa_mask": _triton_sdpa_mask,
+    "kernel_sdpa_gqa": _triton_sdpa_gqa,
     "kernel_decayed": _triton_om_decayed,
     "kernel_decayed_mask": _triton_decayed_mask,
 }

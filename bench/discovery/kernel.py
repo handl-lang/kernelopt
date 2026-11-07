@@ -616,6 +616,16 @@ def _mk_chain_cases():
 def _cases():
     x, y, w, b = _mk()
     s, d, v = _mk_decayed()
+    # the masked-sdpa arm: the additive mask is a live feed (causal
+    # and padding masks materialise as operands); the gqa arm carries
+    # 8 query heads over 4 kv heads — ``repeat(w|v, (2,1,1))``.
+    mk = _v("mk", (4096, 512))
+    qa = _v("qa", (8, 64, 64))
+    kw = _v("kw", (4, 64, 64))
+    kv = _v("kv", (4, 64, 64))
+    gqa_rep = (2, 1, 1)
+    kwr = Op.make("repeat", kw, repeats=gqa_rep)
+    kvr = Op.make("repeat", kv, repeats=gqa_rep)
     ln_center = Op.make(
         "sub", x, Op.make("mean", x, dim=-1, keepdim=True)
     )
@@ -847,6 +857,101 @@ def _cases():
                 "kern_fuse_softmax",
                 "kern_fuse_softmax_mm",
                 "kern_fuse_sdpa_cap",
+            ),
+        ),
+        # The masked twin — ``softmax(mm·s + m)·v``: the
+        # additive-mask spelling (causal masks materialise as the
+        # operand).  ``kern_fuse_sdpa_mask`` folds the whole block to
+        # one ``kf_sdpa(mask=True)`` launch; the chain laws compete
+        # as the two-launch fallback (``m`` survives inside
+        # ``kf_softmax_mm``'s score arg).
+        (
+            "kernel_sdpa_mask",
+            "speed",
+            Op.make(
+                "matmul",
+                Op.make(
+                    "div",
+                    Op.make(
+                        "exp",
+                        Op.make(
+                            "add",
+                            Op.make(
+                                "mul",
+                                Op.make("matmul", x, w),
+                                Const(0.25),
+                            ),
+                            mk,
+                        ),
+                    ),
+                    Op.make(
+                        "sum",
+                        Op.make(
+                            "exp",
+                            Op.make(
+                                "add",
+                                Op.make(
+                                    "mul",
+                                    Op.make("matmul", x, w),
+                                    Const(0.25),
+                                ),
+                                mk,
+                            ),
+                        ),
+                        dim=-1,
+                        keepdim=True,
+                    ),
+                ),
+                w,
+            ),
+            (
+                "kern_fuse_mm_scale",
+                "kern_fuse_softmax",
+                "kern_fuse_softmax_mm",
+                "kern_fuse_sdpa_mask",
+            ),
+        ),
+        # The grouped-query twin — ``softmax(q·(k·g)·s)·(v·g)``: the
+        # enable_gqa spelling, 8 query heads over 4 kv heads
+        # materialised by ``repeat``.  ``kern_fuse_sdpa_gqa`` folds
+        # the whole block to one ``kf_sdpa(gqa=(2,1,1))`` launch —
+        # the repeats ride the attr instead of two spelled launches.
+        (
+            "kernel_sdpa_gqa",
+            "speed",
+            Op.make(
+                "matmul",
+                Op.make(
+                    "div",
+                    Op.make(
+                        "exp",
+                        Op.make(
+                            "mul",
+                            Op.make("matmul", qa, kwr),
+                            Const(0.25),
+                        ),
+                    ),
+                    Op.make(
+                        "sum",
+                        Op.make(
+                            "exp",
+                            Op.make(
+                                "mul",
+                                Op.make("matmul", qa, kwr),
+                                Const(0.25),
+                            ),
+                        ),
+                        dim=-1,
+                        keepdim=True,
+                    ),
+                ),
+                kvr,
+            ),
+            (
+                "kern_fuse_mm_scale",
+                "kern_fuse_softmax",
+                "kern_fuse_softmax_mm",
+                "kern_fuse_sdpa_gqa",
             ),
         ),
         (

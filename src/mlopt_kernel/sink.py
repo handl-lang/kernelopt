@@ -137,8 +137,22 @@ def _kf_rmsnorm(u: Any, dim: Any, eps: float) -> Any:
     )
 
 
+def _repeat(x: Any, rep: Any) -> Any:
+    """``x.repeat(*sizes)`` — accepts a scalar or a tuple of counts."""
+    return x.repeat(
+        *(rep if isinstance(rep, (tuple, list)) else (rep,))
+    )
+
+
 def _kf_sdpa(
-    a: Any, w: Any, s: Any, v: Any, dim: Any, cap: bool = False
+    a: Any,
+    w: Any,
+    s: Any,
+    *rest: Any,
+    dim: Any,
+    cap: bool = False,
+    mask: bool = False,
+    gqa: Any = None,
 ) -> Any:
     """``softmax(mm(a,w)·s)·v`` — the whole-attention composite body.
 
@@ -149,11 +163,23 @@ def _kf_sdpa(
     ``cap=True`` applies the ``tanh`` soft-cap to the scaled score —
     the bounded-logit spelling (the spelled reference stays finite
     in fp32 where an uncapped ``exp(qk)`` can overflow at scale).
+    ``mask=True`` carries an additive mask operand ``m`` ahead of
+    ``v`` (``softmax(mm·s + m)·v`` — the causal/padding-mask
+    spelling).  ``gqa`` carries a ``repeat`` count tuple: the
+    ``enable_gqa`` head expansion applied to ``w`` and ``v`` inside
+    the composite instead of materialising their repeated operands.
     """
     torch = _torch()
+    if gqa is not None:
+        w = _repeat(w, gqa)
+    m, v = rest if mask else (None, *rest)
+    if gqa is not None:
+        v = _repeat(v, gqa)
     score = torch.matmul(a, w) * s
     if cap:
         score = torch.tanh(score)
+    if m is not None:
+        score = score + m
     return torch.matmul(torch.softmax(score, dim=dim), v)
 
 
@@ -236,6 +262,12 @@ def _bindings() -> dict[str, Any]:
         "reciprocal": lambda t: torch.reciprocal(torch.as_tensor(t)),
         "relu": torch.relu,
         "remainder": torch.remainder,
+        # ``repeat(*sizes)`` — the GQA head expansion the enable_gqa
+        # spelling materialises (attr ``repeats``, torch's ``shape``
+        # alias accepted); not a view — it materialises.
+        "repeat": lambda x, shape=None, repeats=None: _repeat(
+            x, repeats if repeats is not None else shape
+        ),
         "reshape": lambda x, shape: (
             x.reshape(*shape)
             if isinstance(shape, (tuple, list))

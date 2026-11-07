@@ -53,7 +53,12 @@ def cand(
     def measure() -> float | None:
         return us
 
-    return Candidate(term=term or StubTerm(), label=label, build=build, measure=measure)
+    return Candidate(
+        term=term or StubTerm(),
+        label=label,
+        build=build,
+        measure=measure,
+    )
 
 
 def run(cands, **kwargs) -> SearchResult:
@@ -70,9 +75,9 @@ def run(cands, **kwargs) -> SearchResult:
 def test_roofline_bound_is_bytes_over_bandwidth() -> None:
     us = roofline_bound_us(2_180_000, 89.1)
     assert us == pytest.approx(24.47, abs=0.05)
-    assert roofline_bound_us(2_180_000, 89.1, overhead_us=10) == pytest.approx(
-        us + 10
-    )
+    assert roofline_bound_us(
+        2_180_000, 89.1, overhead_us=10
+    ) == pytest.approx(us + 10)
     with pytest.raises(ValueError, match="bandwidth"):
         roofline_bound_us(1, 0)
 
@@ -82,7 +87,10 @@ def test_fastest_gated_candidate_wins() -> None:
     assert result.chosen is not None
     assert result.chosen.label == "fast"
     assert result.us == 40.0
-    assert any(r.label == "slow" and r.reason == "slower" for r in result.rejected)
+    assert any(
+        r.label == "slow" and r.reason == "slower"
+        for r in result.rejected
+    )
 
 
 def test_wrong_output_loses_even_when_fastest() -> None:
@@ -121,7 +129,9 @@ def test_cost_never_ranks_candidates() -> None:
 
 
 def test_speedup_uses_the_incumbent_measured_in_the_same_run() -> None:
-    result = run([cand("fast", us=40.0)], measure_incumbent=lambda: 160.0)
+    result = run(
+        [cand("fast", us=40.0)], measure_incumbent=lambda: 160.0
+    )
     assert result.speedup_vs_incumbent == pytest.approx(4.0)
     assert result.routing_row()["speedup_vs_incumbent"] == 4.0
 
@@ -151,7 +161,11 @@ def test_empty_candidate_list_is_an_error() -> None:
 
 def test_rejection_serialises() -> None:
     r = Rejected("x", "gate", "cosine 0.21")
-    assert {"label": r.label, "reason": r.reason, "detail": r.detail} == {
+    assert {
+        "label": r.label,
+        "reason": r.reason,
+        "detail": r.detail,
+    } == {
         "label": "x",
         "reason": "gate",
         "detail": "cosine 0.21",

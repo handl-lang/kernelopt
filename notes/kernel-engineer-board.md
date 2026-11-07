@@ -342,6 +342,82 @@ Named next arms, updated: the `kf_sdpa` variants (causal-mask and
 name) and the v3 prior retrain.  The `strength`/`mixed`-class
 residue story is now complete.
 
+## 2026-11-07: `kf_sdpa` masked + GQA variants — measured results
+
+Bank grew 21 → 23 laws.  The two real-model `kf_sdpa` spellings the
+last arm named, folded whole — same keepdim/single-axis gate and
+`dim` unwrap as the sdpa site:
+
+| law | site → fused op | note |
+|---|---|---|
+| `kern_fuse_sdpa_mask` | `matmul(softmax(mm·s + m), v)` → `kf_sdpa(a,w,s,m,v, mask=True)` | the additive-mask spelling — causal and padding masks materialise as the fifth operand |
+| `kern_fuse_sdpa_gqa` | `matmul(softmax(mm(a, w·g)·s), v·g)` → `kf_sdpa(a,w,s,v, gqa=g)` | the `enable_gqa` spelling — the shared `GR` metavariable pins both `repeat`s to one group count |
+
+Both mint into `kf_sdpa` (mask rides a fifth argument + attr, gqa an
+attr); the sink's `_kf_sdpa` composite dispatches on arity and
+applies the repeats inside the composite.  `repeat` gained a sink
+binding for the spelled side's verify.  Denotations
+(`pa_kf_sdpa_mask_expand`, `pa_kf_sdpa_gqa_expand`) keep the fused
+arities in the prior-art vocabulary.
+
+Case table (30 cases, CUDA fp32, ~50 reps, median — new rows only;
+the rest re-measure within the documented band):
+
+| case | cost | spelled µs | sched µs | speedup | triton µs (verified) |
+|---|---|---|---|---|---|
+| kernel_sdpa_mask (new) | 14→1 | 2497 | 2002 | **1.25×** | 2261 ✓ |
+| kernel_sdpa_gqa (new) | 15→1 | 101 | 72 | **1.40×** | 416 ✓ |
+
+**Verdicts.**
+
+1. **Masked variant — PASS.**  Verify-equal (fp64 site, max_abs
+   2e-6 on fp32 feeds); one launch beats the spelled 14-op chain
+   1.25× and edges the 3-launch hand pipeline (2002 vs 2261 µs).
+   The chain laws compete honestly — `kf_softmax_mm` binds `m`
+   inside its score arg as the multi-launch fallback.
+2. **GQA variant — PASS, and the composite beats the hand loop
+   outright.**  Verify-equal; one launch vs the batched spelled
+   block, and 5.8× the per-head triton pipeline (72 vs 416 µs —
+   the composed 2-D kernels unroll over 8 heads where the fused
+   composite dispatches whole).  The `GR` pin declines mismatched
+   k/v repeats; the plain `kern_fuse_sdpa` still fires (its
+   metavars bind the `repeat` subterms) but loses on cost (3 vs 1).
+3. **Witness recovery fix (T-001).**  The sieve's derivability gate
+   now recovers named witnesses when the monolithic saturation
+   merges through a non-replayable congruence path — a
+   single-premise mini-e-graph probe (`_direct_witness`) re-finds
+   e.g. `pa_om_chunk_scan_expand_3`'s one-step derivation the
+   373-rule run obscured.  `test_chunk_scan_nary_is_known` passes
+   again; the verdict is unchanged (`known`), only the witness is
+   now named honestly.
+
+Named next arms, updated: the v3 prior retrain (new laws' `a:r:*`
+buckets are zero-weight) — and, if the sieve sweep wants it, the
+masked+GQA denotations as fresh sieve candidates.
+
+**Arm — the v3 prior retrain — measured.**  Same recipe
+(`scripts/train_kernel_prior.py`, 64 cases × 8 ep, held-out 32 at
+seed+7919), now over the 23-law bank:
+
+| arm | reward/ep | note |
+|---|---|---|
+| shipped-greedy | 0.645 | v2 incumbent |
+| trained-greedy | 0.630 | **v3 — parity band** |
+| shipped | 0.574 | |
+| trained | 0.527 | |
+| scripted | 0.226 | |
+| cold | −0.150 | |
+| random | −0.261 | |
+
+Verdict: **PARTIAL — parity retrain, not a gain.**  v3 lands
+inside the v2 band (0.630 vs 0.645) and is baked
+(`KERNEL_PLAYER_WEIGHTS`) for the same reason v2 was: honest
+provenance — every rule in the current bank now has a trained
+`a:r:*` bucket instead of riding `x:m` alone.  The cold-start
+plateau persists (cold −0.150 vs scripted 0.226) — the imitation
+phase is still what carries the prior; the missing piece stays
+whatever carries cold-start exploration.
+
 2026-10-19, post-Lotufo.  The same machinery that plays law-discovery
 can play kernel engineering — a second domain, not a second system.
 

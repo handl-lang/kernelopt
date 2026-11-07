@@ -526,6 +526,62 @@ def _premises(
 
 
 # ---------------------------------------------------------------------------
+#  Witness recovery — single-premise probes
+# ---------------------------------------------------------------------------
+
+#: Saturation bounds for the witness-recovery mini-graphs — one rule,
+#: two interned sides: a few iterations reach the merge or don't.
+_WITNESS_MAX_ITERS = 8
+_WITNESS_MAX_NODES = 10_000
+
+
+def _direct_witness(lhs: Any, rhs: Any, premises: list) -> tuple:
+    """Recover a named replayable witness the monolithic run obscured.
+
+    The full-bank saturation can merge the two sides through a long
+    congruence path before any premise fires at a certificate-
+    attributable position — ``verify_law`` then reports
+    ``derivable=True`` with empty ``witness_rules`` (an
+    e-graph-dependent witness).  The verdict is right, but the
+    derivation the bank justifies is still real: run each premise
+    alone in a small e-graph over the same two interned sides and
+    collect every rule that merges them with a replayable
+    certificate.
+
+    Only rules whose LHS head op occurs in either side can ever fire
+    in a single-rule graph, so the rest are skipped by head — a cheap
+    structural prefilter that keeps the probe near-linear in the
+    premise count.
+    """
+    heads = _ops_of(lhs) | _ops_of(rhs)
+    found: list[str] = []
+    for rule in premises:
+        head = getattr(rule.lhs, "op", None)
+        if head is not None and head not in heads:
+            continue
+        eg = EGraph()
+        r_lhs = eg.add_term(lhs)
+        r_rhs = eg.add_term(rhs)
+        eg.run(
+            [rule],
+            r_lhs,
+            max_iterations=_WITNESS_MAX_ITERS,
+            max_nodes=_WITNESS_MAX_NODES,
+        )
+        if eg.find(r_lhs) != eg.find(r_rhs):
+            continue
+        for src, dst, eid in (
+            (lhs, rhs, r_lhs),
+            (rhs, lhs, r_rhs),
+        ):
+            cert = eg.certificate(src, dst, root_eid=eid)
+            if cert.replayable:
+                found.append(rule.name)
+                break
+    return tuple(found)
+
+
+# ---------------------------------------------------------------------------
 #  The measured gate — beat the rest-of-bank floor, with attribution
 # ---------------------------------------------------------------------------
 
@@ -839,6 +895,14 @@ def sieve(
     row_kw["derivable"] = dres.derivable
     row_kw["witness_rules"] = dres.witness_rules
     row_kw["deriv_note"] = dres.note or dres.stop
+    if dres.derivable and not dres.witness_rules:
+        wit = _direct_witness(lhs, rhs, premises)
+        if wit:
+            row_kw["witness_rules"] = wit
+            row_kw["deriv_note"] = (
+                (row_kw["deriv_note"] or "")
+                + "; witness via single-rule probe"
+            ).lstrip("; ")
     if dres.derivable:
         return SieveRow(verdict="known", **row_kw)
 

@@ -275,6 +275,51 @@ pa_kf_sdpa_cap_expand = R(
     tags=_PA_FUS,
 )
 
+pa_kf_sdpa_mask_expand = R(
+    "pa_kf_sdpa_mask_expand",
+    Op.make("kf_sdpa", "a", "w", "s", "m", "v", dim="D", mask=True),
+    Op.make(
+        "matmul",
+        _sm_site(
+            Op.make(
+                "add",
+                Op.make("mul", Op.make("matmul", "a", "w"), "s"),
+                "m",
+            )
+        ),
+        "v",
+    ),
+    law="The masked SDPA kernel denotes softmax(qk·s + m)·v — the "
+    "additive-mask attention (causal/padding masks materialised as "
+    "the operand) under the same one-pass schedule.",
+    tags=_PA_FUS,
+)
+
+pa_kf_sdpa_gqa_expand = R(
+    "pa_kf_sdpa_gqa_expand",
+    Op.make("kf_sdpa", "a", "w", "s", "v", dim="D", gqa="GR"),
+    Op.make(
+        "matmul",
+        _sm_site(
+            Op.make(
+                "mul",
+                Op.make(
+                    "matmul",
+                    "a",
+                    Op.make("repeat", "w", repeats="GR"),
+                ),
+                "s",
+            )
+        ),
+        Op.make("repeat", "v", repeats="GR"),
+    ),
+    law="The grouped-query SDPA kernel denotes "
+    "softmax(q·(k·g)·s)·(v·g) — the enable_gqa spelling whose k/v "
+    "head expansion the fused schedule reads in place (GR pins both "
+    "repeats to one group count).",
+    tags=_PA_FUS,
+)
+
 
 def _ln_core() -> Op:
     """``sub(u, mean(u, dim=D, keepdim=True))`` — the centred term."""
@@ -720,6 +765,8 @@ KERNEL_PRIOR_ART_RULES: tuple[Rewrite, ...] = (
     pa_kf_softmax_mm_expand,
     pa_kf_sdpa_expand,
     pa_kf_sdpa_cap_expand,
+    pa_kf_sdpa_mask_expand,
+    pa_kf_sdpa_gqa_expand,
     pa_kf_layernorm_expand,
     pa_kf_rmsnorm_expand,
     pa_kf_mm_bias_expand,

@@ -98,7 +98,11 @@ class SearchResult:
             **self.routing_row(),
             "roofline_us": round(self.roofline_us, 2),
             "rejected": [
-                {"label": r.label, "reason": r.reason, "detail": r.detail}
+                {
+                    "label": r.label,
+                    "reason": r.reason,
+                    "detail": r.detail,
+                }
                 for r in self.rejected
             ],
         }
@@ -115,7 +119,9 @@ def roofline_bound_us(
 
 def _cosine(a: torch.Tensor, b: torch.Tensor) -> float:
     return torch.nn.functional.cosine_similarity(
-        a.detach().flatten().float(), b.detach().flatten().float(), dim=0
+        a.detach().flatten().float(),
+        b.detach().flatten().float(),
+        dim=0,
     ).item()
 
 
@@ -155,13 +161,19 @@ def search(
             out = cand.build()
         except Exception as exc:  # noqa: BLE001
             rejected.append(
-                Rejected(cand.label, "failed to run", f"{type(exc).__name__}")
+                Rejected(
+                    cand.label, "failed to run", f"{type(exc).__name__}"
+                )
             )
             continue
         cos = _cosine(out, expected)
         if cos < tolerance:
             rejected.append(
-                Rejected(cand.label, "gate", f"cosine {cos:.6f} < {tolerance}")
+                Rejected(
+                    cand.label,
+                    "gate",
+                    f"cosine {cos:.6f} < {tolerance}",
+                )
             )
             continue
 
@@ -196,14 +208,18 @@ def search(
     for u, cand, _ in feasible:
         if cand is not chosen:
             rejected.append(
-                Rejected(cand.label, "slower", f"{u:.1f} us vs {us:.1f} us")
+                Rejected(
+                    cand.label, "slower", f"{u:.1f} us vs {us:.1f} us"
+                )
             )
     return SearchResult(
         operator=operator,
         chosen=chosen,
         cosine=cos,
         us=us,
-        speedup_vs_incumbent=(incumbent_us / us) if incumbent_us else 0.0,
+        speedup_vs_incumbent=(incumbent_us / us)
+        if incumbent_us
+        else 0.0,
         roofline_us=floor,
         rejected=rejected,
     )

@@ -83,7 +83,7 @@ def _rmsnorm_term(eps=Const(1e-6), power=Const(2), keepdim=True):
 
 class TestLaws:
     def test_bank_shape(self):
-        """Twenty-six codegen laws; the fused ops take leaf children."""
+        """Twenty-eight codegen laws; the fused ops take leaf children."""
         assert [r.name for r in KERNEL_RULES] == [
             "kern_fuse_silu",
             "kern_fuse_softsign",
@@ -97,6 +97,8 @@ class TestLaws:
             "kern_fuse_softmax_mm",
             "kern_fuse_sdpa",
             "kern_fuse_sdpa_cap",
+            "kern_fuse_sdpa_mask",
+            "kern_fuse_sdpa_gqa",
             "kern_fuse_layernorm",
             "kern_fuse_rmsnorm",
             "kern_fuse_mm_bias",
@@ -310,6 +312,118 @@ class TestLaws:
         root = eg.add_term(self._sdpa_term(keepdim=False))
         assert not eg.apply_rule(_rule("kern_fuse_sdpa"), root)
         assert not eg.apply_rule(_rule("kern_fuse_sdpa_cap"), root)
+
+    @staticmethod
+    def _sdpa_mask_term(*, keepdim=True):
+        """``matmul(softmax(mm·s + m), v)`` — the additive-mask site."""
+        w = Var("w", TensorType((8, 4)))
+        m = Var("m", TensorType((4, 4)))
+        v = Var("v", TensorType((4, 4)))
+        u = Op.make(
+            "add",
+            Op.make("mul", Op.make("matmul", X, w), Const(0.25)),
+            m,
+        )
+        return Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make(
+                    "sum", Op.make("exp", u), dim=-1, keepdim=keepdim
+                ),
+            ),
+            v,
+        )
+
+    def test_sdpa_mask_folds_whole_block(self):
+        """The masked mm→scale→softmax→mm chain extracts one kf_sdpa."""
+        t = self._sdpa_mask_term()
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert not eg.apply_rule(_rule("kern_fuse_sdpa"), root)
+        assert eg.apply_rule(_rule("kern_fuse_sdpa_mask"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "kf_sdpa"
+        assert best.attrs["mask"] is True
+        assert len(best.args) == 5
+        assert kernel_cost(best) == 1.0
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_sdpa_mask_declines_dropped_dim(self):
+        """The masked fold inherits the softmax site's keepdim gate."""
+        eg = EGraph()
+        root = eg.add_term(self._sdpa_mask_term(keepdim=False))
+        assert not eg.apply_rule(_rule("kern_fuse_sdpa_mask"), root)
+
+    @staticmethod
+    def _sdpa_gqa_term(*, keepdim=True):
+        """``matmul(softmax(mm(a, w·g)·s), v·g)`` — the GQA site."""
+        a = Var("a", TensorType((4, 8, 4)))
+        w = Var("w", TensorType((2, 4, 4)))
+        v = Var("v", TensorType((2, 4, 4)))
+        rep = (2, 1, 1)
+        u = Op.make(
+            "mul",
+            Op.make(
+                "matmul",
+                a,
+                Op.make("repeat", w, repeats=rep),
+            ),
+            Const(0.25),
+        )
+        return Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make(
+                    "sum", Op.make("exp", u), dim=-1, keepdim=keepdim
+                ),
+            ),
+            Op.make("repeat", v, repeats=rep),
+        )
+
+    def test_sdpa_gqa_folds_whole_block(self):
+        """The head-expanded chain extracts one kf_sdpa(gqa=…)."""
+        t = self._sdpa_gqa_term()
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert eg.apply_rule(_rule("kern_fuse_sdpa_gqa"), root)
+        best = eg.extract_best(root, kernel_cost)
+        assert best is not None and best.op == "kf_sdpa"
+        assert best.attrs["gqa"] == (2, 1, 1)
+        assert kernel_cost(best) == 1.0
+        cert = eg.certificate(t, best)
+        verify_certificate(t, cert)
+
+    def test_sdpa_gqa_pins_one_group_count(self):
+        """Mismatched k/v repeats decline — the GR pin guards it."""
+        a = Var("a", TensorType((4, 8, 4)))
+        w = Var("w", TensorType((2, 4, 4)))
+        v = Var("v", TensorType((2, 4, 4)))
+        u = Op.make(
+            "mul",
+            Op.make(
+                "matmul",
+                a,
+                Op.make("repeat", w, repeats=(2, 1, 1)),
+            ),
+            Const(0.25),
+        )
+        t = Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make("sum", Op.make("exp", u), dim=-1, keepdim=True),
+            ),
+            Op.make("repeat", v, repeats=(4, 1, 1)),
+        )
+        eg = EGraph()
+        root = eg.add_term(t)
+        assert not eg.apply_rule(_rule("kern_fuse_sdpa_gqa"), root)
 
     def test_layernorm_fires_and_derives_eps(self):
         """The mean/var/rsqrt block folds to ``kf_layernorm``."""
@@ -910,6 +1024,88 @@ class TestSink:
         )
         rep = sink.verify(
             sink.lower(ir_s), sink.lower(ir_f), (x, wv, vv)
+        )
+        assert rep.passed and rep.max_abs < 1e-9
+
+    def test_sdpa_mask_fused_op_verifies(self):
+        """``kf_sdpa(mask=True)`` verifies against its spelled site."""
+        sink = KernelSink()
+        w = Var("w", TensorType((8, 4)))
+        m = Var("m", TensorType((4, 4)))
+        v = Var("v", TensorType((4, 4)))
+        u = Op.make(
+            "add",
+            Op.make("mul", Op.make("matmul", X, w), Const(0.25)),
+            m,
+        )
+        spelled = Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make("sum", Op.make("exp", u), dim=-1, keepdim=True),
+            ),
+            v,
+        )
+        fused = Op.make(
+            "kf_sdpa", X, w, Const(0.25), m, v, dim=-1, mask=True
+        )
+        x = torch.randn(4, 8, dtype=torch.float64)
+        wv = torch.randn(8, 4, dtype=torch.float64)
+        mv = torch.randn(4, 4, dtype=torch.float64)
+        vv = torch.randn(4, 4, dtype=torch.float64)
+        inputs = [X, w, m, v]
+        ir_s = IR(
+            root=spelled,
+            inputs=inputs,
+            input_names={t.name for t in inputs},
+        )
+        ir_f = IR(
+            root=fused, inputs=inputs, input_names=ir_s.input_names
+        )
+        rep = sink.verify(
+            sink.lower(ir_s), sink.lower(ir_f), (x, wv, mv, vv)
+        )
+        assert rep.passed and rep.max_abs < 1e-9
+
+    def test_sdpa_gqa_fused_op_verifies(self):
+        """``kf_sdpa(gqa=…)`` verifies against the repeated site."""
+        sink = KernelSink()
+        a = Var("a", TensorType((4, 8, 4)))
+        w = Var("w", TensorType((2, 4, 4)))
+        v = Var("v", TensorType((2, 4, 4)))
+        rep_t = (2, 1, 1)
+        u = Op.make(
+            "mul",
+            Op.make("matmul", a, Op.make("repeat", w, repeats=rep_t)),
+            Const(0.25),
+        )
+        spelled = Op.make(
+            "matmul",
+            Op.make(
+                "div",
+                Op.make("exp", u),
+                Op.make("sum", Op.make("exp", u), dim=-1, keepdim=True),
+            ),
+            Op.make("repeat", v, repeats=rep_t),
+        )
+        fused = Op.make(
+            "kf_sdpa", a, w, Const(0.25), v, dim=-1, gqa=rep_t
+        )
+        av = torch.randn(4, 8, 4, dtype=torch.float64)
+        wv = torch.randn(2, 4, 4, dtype=torch.float64)
+        vv = torch.randn(2, 4, 4, dtype=torch.float64)
+        inputs = [a, w, v]
+        ir_s = IR(
+            root=spelled,
+            inputs=inputs,
+            input_names={t.name for t in inputs},
+        )
+        ir_f = IR(
+            root=fused, inputs=inputs, input_names=ir_s.input_names
+        )
+        rep = sink.verify(
+            sink.lower(ir_s), sink.lower(ir_f), (av, wv, vv)
         )
         assert rep.passed and rep.max_abs < 1e-9
 
