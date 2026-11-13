@@ -9,7 +9,10 @@ prints the literal this file pastes.
 from __future__ import annotations
 
 #: The kernel board's player prior — v3, trained by
-#: ``scripts/train_kernel_prior.py`` on the 23-law bank: imitating
+#: ``scripts/train_kernel_prior.py`` on the 28-entry bank (23 named
+#: laws + the 5-ary ``kern_fuse_chunk_scan`` family — the "23-law"
+#: count in the training log names the non-family entries):
+#: imitating
 #: the match-then-stop oracle (``state.matches`` rules, then
 #: ``stop``) + REINFORCE over 64 kernel cases x 8 epochs; eval (32
 #: held-out): trained-greedy 0.630 vs shipped-greedy 0.645 —

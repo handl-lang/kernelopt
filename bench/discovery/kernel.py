@@ -1,6 +1,6 @@
 """The kernelopt spike's bench cases — measured codegen pay.
 
-Forty-four kernel cases: a spelled program, a codegen-law candidate, and
+Forty-six kernel cases: a spelled program, a codegen-law candidate, and
 the honest row — lower both through
 :class:`mlopt_kernel.KernelSink`, verify numerically (verify-first),
 then time spelled vs scheduled.  Where the case has a registered

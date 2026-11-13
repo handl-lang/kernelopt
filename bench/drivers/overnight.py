@@ -625,7 +625,7 @@ class _KernelArena(og.OpenArena):
 #  ``mlopt_discovery.prim_mint.prim_pool`` machinery (promoted out of
 #  the parent's ``zoo-prim`` driver — one implementation, both
 #  domain repos wire their own hooks) anti-unifies recurring manual
-#  subgraphs out of the whole 44-case registry merged into one
+#  subgraphs out of the whole 46-case registry merged into one
 #  e-graph, keeps the shapes binding >= ``--xbind`` distinct cases
 #  that no kernel-lowerable op already denotes, and mints a NEW
 #  ``ksynop_<hash>`` primitive per shape whose denotation IS the

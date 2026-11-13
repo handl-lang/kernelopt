@@ -1,5 +1,8 @@
 # Kernel novelty sieve
 
+> Snapshot note: this run (2026-10-22) predates `kern_fuse_sdpa_mask` /
+> `kern_fuse_sdpa_gqa` — those two laws are absent from the table below.
+
 The codegen port of the novelty sieve — the automatic three-gate filter between a shipped ``KERNEL_RULES`` law and the human-review queue.  **cert** = the law's own rewrite carries a standalone-replayable certificate on its instance (`verify_law` + `verify_certificate`); **derivable** = the known bank — `KERNEL_RULES` U the kernel prior-art bank (`KERNEL_PRIOR_ART_RULES`, the codegen vocabulary) U the shared substrate surface (`default_rules` + `ALL_RULES_WITH_LAYOUT` + `ATTENTION` + scan monoids + the prior-art FUSION/CATEGORICAL slice) — minus the candidate and its alpha-siblings, already proves the instance; **beat** = on some registered `bench.discovery.kernel` case the certified extraction under the full kernel bank lands strictly below the best extraction the rest of the bank reaches on the same term (the floor — itself never worse than spelled) AND the derivation certificate invokes the candidate.  A law is a novelty iff cert ∧ beat ∧ ¬derivable.  `truth` is the fp64 `KernelSink.verify` oracle on the instance — an `unequal` refutes outright.
 
 - date: 2026-10-22 23:09 UTC · git: `e5f7e22` (dirty) · torch 2.14.1+cu130 on cuda · bank 313 rules

@@ -13,7 +13,15 @@ Nothing in this repo may leak into the parent's public docs/paper.
   over a lazy torch composite, verify-first), `board` (`KernelBoard`
   — the `gamekit.engine.Board` episode), `weights`
   (`KERNEL_PLAYER_WEIGHTS` — the baked prior, retrain via
-  `scripts/train_kernel_prior.py`), `play` (the domain plugin).
+  `scripts/train_kernel_prior.py`), `priorart`
+  (`KERNEL_PRIOR_ART_RULES` — the kernel-compilers' known codegen
+  vocabulary as laws; the `pa_kf_*` expand bank the novelty sieve
+  derives against), `scan` (the `om_chunk_scan` schedule —
+  `build_scan_plan`/`is_chunk_scan` + `ScanRunner`, the
+  pairwise-batched forward the `kern_fuse_chunk_scan*` laws lower
+  to), `search` (the ADR-0165 kernel-IR term search over
+  `lib-kernel-ir` `Term`s — gate → bound → measure), `play` (the
+  domain plugin).
 - `mlopt_kernel.play` is the seam: `play.register()` seats `kernel`
   into `mlopt_discovery.play.DOMAINS` (`play.spec_domain`) and seats
   `linear`/`linear-greedy`/`linear-cold`/`random`/`playbook` on the
@@ -22,11 +30,12 @@ Nothing in this repo may leak into the parent's public docs/paper.
   because the scripted line lives here).  Registration is explicit —
   importing the module mutates nothing; `main()` calls `register()`
   itself and programmatic consumers call it at their entry point.
-- `tests/` — the kernel suite (`test_kernel.py`).
+- `tests/` — the kernel suite (`test_kernel.py` + the priorart /
+  sieve / search-ir / overnight / transfer files).
 - `scripts/train_kernel_prior.py` — match-oracle imitation +
   REINFORCE; prints the `weights.py` literal + held-out table.
 - `bench/` — measurement, not shipped code: `bench/discovery/kernel.py`
-  (44 kernel cases; `python -m bench.discovery.kernel`),
+  (46 kernel cases; `python -m bench.discovery.kernel`),
   `bench/limits/triton/` (the hand-Triton baseline; `triton`+CUDA
   only, declines honestly), `bench/limits/registry.py` (re-exports the
   shared `benchkit.baselines` contract types the arm needs).
@@ -39,12 +48,20 @@ Nothing in this repo may leak into the parent's public docs/paper.
 
 ## Substrate deps
 
-uv git+ssh deps on `handl-lang/graphopt` subdirectories, pinned
-to `main` (`[tool.uv.sources]`): `mlopt-core`, `mlopt-torch`,
-`mlopt-orchestrator`, `gamekit`, `mlopt-discovery`.  Bump the pin
-deliberately — upstream `spec_domain`/`register_player` are the
-frozen seam this repo binds; a breaking upstream change shows up as
-an import-time failure in `mlopt_kernel.play`.
+Every entry in `[tool.uv.sources]` (`pyproject.toml`) — git+ssh deps
+pinned to `main` on the split sibling repos' per-package
+subdirectories, plus one path dep: `mlopt-core` and
+`mlopt-orchestrator` (`handl-lang/eqsat`), `mlopt-torch`,
+`mlopt-carriers` (the `probes` dep-group only — the vocab probe
+lifts the retnet carrier through `mlopt_carriers.om`),
+`mlopt-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`
+(`handl-lang/gamekit` `packages/`), and `lib-kernel-ir` (the
+sibling checkout at `../lib-kernel-ir` — `mlopt_kernel.search`
+reads its `Term`/`Cost` IR; tests put `../lib-kernel-ir/src` on
+`pythonpath` until it is published).  Bump the pin deliberately —
+upstream `spec_domain`/`register_player` are the frozen seam this
+repo binds; a breaking upstream change shows up as an
+import-time failure in `mlopt_kernel.play`.
 
 ## Verification
 
