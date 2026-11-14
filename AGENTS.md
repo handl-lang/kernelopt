@@ -51,15 +51,16 @@ MIT OR Apache-2.0.
 
 Every entry in `[tool.uv.sources]` (`pyproject.toml`) — git deps
 pinned to the `v0.1.0` tags on the split sibling repos'
-per-package subdirectories, plus one path dep: `mlopt-core` and
+per-package subdirectories: `mlopt-core` and
 `mlopt-orchestrator` (`handl-lang/eqsat`), `mlopt-torch`,
 `mlopt-carriers` (the `probes` dep-group only — the vocab probe
 lifts the retnet carrier through `mlopt_carriers.om`),
 `mlopt-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`
-(`handl-lang/gamekit` `packages/`), and `lib-kernel-ir` (the
-sibling checkout at `../lib-kernel-ir` — `mlopt_kernel.search`
-reads its `Term`/`Cost` IR; tests put `../lib-kernel-ir/src` on
-`pythonpath` until it is published).  Bump the pin deliberately —
+(`handl-lang/gamekit` `packages/`), and `lib-kernel-ir`
+(`handl-lang/lib-kernel-ir` — `mlopt_kernel.search` reads its
+`Term`/`Cost` IR; tests put `../lib-kernel-ir/src` on `pythonpath`
+so a dev sibling checkout resolves ahead of the installed wheel).
+Bump the pin deliberately —
 upstream `spec_domain`/`register_player` are the frozen seam this
 repo binds; a breaking upstream change shows up as an
 import-time failure in `mlopt_kernel.play`.

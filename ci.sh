@@ -2,9 +2,9 @@
 # ci.sh — kernelopt CI gate for the bupha shell runner.
 #
 # uv-managed Python project: sync the locked env, run the pytest suite.
-# lib-kernel-ir is a sibling path dep ([tool.uv.sources]) — same worktree
-# plumbing model as the cargo repos' ci.sh: in a detached worktree the
-# sibling layout is recreated in the worktree's parent.
+# Deps are public git URLs ([tool.uv.sources]); the worktree plumbing
+# below recreates the sibling layout because pytest pythonpath /
+# ty extra-paths resolve ``../lib-kernel-ir/src`` for dev checkouts.
 set -euo pipefail
 
 cd "$(dirname "$0")"

@@ -13,9 +13,10 @@ from __future__ import annotations
 import pytest
 import torch
 
-# lib-kernel-ir is a sibling-repo path dep (``../lib-kernel-ir``) — not
-# published yet, so a clone without the sibling skips this file honestly
-# rather than erroring at collection.
+# lib-kernel-ir is a git dep (tag v0.1.0); dev worktrees may resolve a
+# sibling ``../lib-kernel-ir`` checkout ahead of the installed wheel, so
+# a clone without it skips this file honestly rather than erroring at
+# collection.
 lib_kernel_ir = pytest.importorskip("lib_kernel_ir")
 
 from lib_kernel_ir import Cost, qgemv  # noqa: E402

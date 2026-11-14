@@ -1,9 +1,10 @@
 # paper/
 
 **Draft — proposed, not accepted.**  No human revision or
-external review yet; the numbers in the paper are repo-internal
-evidence — this file ships in the public `handl-lang/kernelopt`
-tree but the paper itself is not an archival claim.
+external review yet; the numbers in the paper are draft-stage
+evidence pending external replication — this file ships in the
+public `handl-lang/kernelopt` tree but the paper itself is not an
+archival claim.
 
 - `paper.qmd` — the quarto source
 - `references.bib` — bibliography (incl. the internal tech-report

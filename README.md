@@ -65,13 +65,15 @@ see `[tool.uv.sources]` in `pyproject.toml`:
 | `mlopt-discovery` | `handl-lang/graphopt` | `packages/mlopt-discovery` |
 | `gamekit` | `handl-lang/gamekit` | `packages/gamekit` |
 | `benchkit` | `handl-lang/gamekit` | `packages/benchkit` |
-| `lib-kernel-ir` | sibling checkout | `../lib-kernel-ir` (path dep) |
+| `lib-kernel-ir` | `handl-lang/lib-kernel-ir` | repo root, tag `v0.1.0` |
 
 `mlopt_kernel.search` and its test read `lib_kernel_ir` from the
-sibling `../lib-kernel-ir` checkout (the package is not published
-yet); everything else — the law bank, sink, board, play domain —
-needs only the git deps above.  The search test skips honestly when
-the sibling is absent.
+git dep above; dev worktrees may also resolve a sibling
+`../lib-kernel-ir` checkout ahead of the installed wheel (the
+`pythonpath`/`extra-paths` entries in `pyproject.toml`), and the
+search test skips honestly when `lib_kernel_ir` is absent.  The
+rest — the law bank, sink, board, play domain — needs only the git
+deps above.
 
 ## Verify
 

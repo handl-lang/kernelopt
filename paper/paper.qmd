@@ -1,6 +1,6 @@
 ---
 title: "kernelopt: Certified Rewrite Play for Kernel Schedules\\newline A Learned Game from Verified Fusions to a Chunked-Scan Schedule"
-subtitle: "Draft — proposed, not accepted.  PRIVATE — repo-internal numbers."
+subtitle: "Draft — proposed, not accepted."
 author:
   - name: "mlopt project"
     affiliation: "handl-lang / kernelopt"
@@ -48,10 +48,8 @@ bibliography: references.bib
 
 ::: {.callout-important}
 **Status.**  This is a working draft — *proposed, not accepted*.  It
-has not had human revision or external review.  This repository is
-**private**: the numbers below are repo-internal and this file must
-not be copied into public trees.  Every quantitative claim names the
-audit doc, bench module, or note that produced it.
+has not had human revision or external review.  Every quantitative
+claim names the audit doc, bench module, or note that produced it.
 :::
 
 # Introduction
@@ -103,7 +101,7 @@ the comparison is parity on a launch-bound term rather than a win in
 the GEMM-bound regime, and one fusion family — the decayed matmul —
 verifies and prices but never pays at any measured size.
 
-The repository is `handl-lang/kernelopt` (private); every number
+The repository is `handl-lang/kernelopt`; every number
 below cites the artifact that produced it (@sec-repro).
 
 # The substrate, briefly {#sec-substrate}
@@ -479,9 +477,10 @@ FLA reference.  The named residual is attacked; what the claim does
   carries cold-start exploration is unmeasured.  The bank has since
   grown past the v2 prior's trained buckets — a v3 retrain is the
   open arm.
-- **Private evidence.**  The box (RTX 2050 / 11 GB), the noise band
+- **Measurement context.**  The box (RTX 2050 / 11 GB), the noise band
   (load average 5–7 during the audit), and the numbers are
-  repo-internal.  `kernel_decayed`'s per-run spread (0.69–1.17×)
+  draft-stage evidence pending external replication.
+  `kernel_decayed`'s per-run spread (0.69–1.17×)
   is the honest statement: small-case dispatch rows are
   variance-dominated.
 
@@ -545,7 +544,7 @@ names as the real comparison at scale.
 # Reproduction {#sec-repro}
 
 All numbers are reproducible from the committed tree at
-`handl-lang/kernelopt` (private):
+`handl-lang/kernelopt`:
 
 ```sh
 uv sync
