@@ -37,8 +37,8 @@ if [ "$PWD" != "$MAIN_CHECKOUT" ]; then
   done
 fi
 
-# Private git deps (eqsat/graphopt/gamekit subdirs): insteadOf rewrite
-# scoped to this process tree — never touches ~/.gitconfig.
+# Fallback for ssh-style remotes: insteadOf rewrite scoped to this
+# process tree — never touches ~/.gitconfig.
 if [ -z "${GIT_CONFIG_COUNT:-}" ]; then
   export GIT_CONFIG_COUNT=1
   export GIT_CONFIG_KEY_0="url.git@github.com:handl-lang/.insteadOf"

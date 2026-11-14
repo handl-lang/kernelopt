@@ -13,8 +13,14 @@ from __future__ import annotations
 import pytest
 import torch
 
-from lib_kernel_ir import Cost, qgemv
-from mlopt_kernel.search import (
+# lib-kernel-ir is a sibling-repo path dep (``../lib-kernel-ir``) — not
+# published yet, so a clone without the sibling skips this file honestly
+# rather than erroring at collection.
+lib_kernel_ir = pytest.importorskip("lib_kernel_ir")
+
+from lib_kernel_ir import Cost, qgemv  # noqa: E402
+
+from mlopt_kernel.search import (  # noqa: E402
     Candidate,
     Rejected,
     SearchResult,

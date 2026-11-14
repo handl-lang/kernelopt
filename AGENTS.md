@@ -1,8 +1,8 @@
-# Agent guide — kernelopt (PRIVATE)
+# Agent guide — kernelopt
 
-The codegen domain for the mlopt game layer — a **private** repo,
-split out of `handl-lang/graphopt` (plan 0032 phase 4).
-Nothing in this repo may leak into the parent's public docs/paper.
+The codegen domain for the mlopt game layer, split out of
+`handl-lang/graphopt` (plan 0032 phase 4).  Dual-licensed
+MIT OR Apache-2.0.
 
 ## Layout
 
@@ -43,14 +43,15 @@ Nothing in this repo may leak into the parent's public docs/paper.
   resume ledger is `benchkit.checkpoint.Checkpoint` (the shared
   harness promoted to `handl-lang/gamekit` `packages/benchkit`,
   consumed as the `benchkit` git dep below).
-- `docs/`, `notes/` — the audit + design note moved out of the
-  parent (they are why this repo is private).
+- `docs/`, `notes/`, `paper/` — the measured result documents, the
+  design/measurement ledger, and the working paper draft (proposed,
+  not accepted) moved out of the parent.
 
 ## Substrate deps
 
-Every entry in `[tool.uv.sources]` (`pyproject.toml`) — git+ssh deps
-pinned to `main` on the split sibling repos' per-package
-subdirectories, plus one path dep: `mlopt-core` and
+Every entry in `[tool.uv.sources]` (`pyproject.toml`) — git deps
+pinned to the `v0.1.0` tags on the split sibling repos'
+per-package subdirectories, plus one path dep: `mlopt-core` and
 `mlopt-orchestrator` (`handl-lang/eqsat`), `mlopt-torch`,
 `mlopt-carriers` (the `probes` dep-group only — the vocab probe
 lifts the retnet carrier through `mlopt_carriers.om`),

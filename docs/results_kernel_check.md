@@ -4,7 +4,7 @@ Measurement-only pass over the kernel board as committed (`3801504`
 spike, `54230d5` expansion; `packages/mlopt-kernel/`,
 `bench/discovery/kernel.py`, `bench/limits/triton/`,
 `--domain kernel` in `mlopt_discovery.play`).  Claims are taken from
-`project/notes/kernel-engineer-board.md` and the two commit messages.
+`notes/kernel-engineer-board.md` and the two commit messages.
 Same box the committed numbers were measured on: RTX 2050 / 16-core /
 11 GB, torch 2.14.0+cu130, triton 3.8.0, CUDA fp32 where the claim
 says so.  Run 2026-10-20 while the tree also carried the parallel

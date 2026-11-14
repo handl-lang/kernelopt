@@ -1,5 +1,8 @@
 # Kernel prior-art bank — results
 
+> Snapshot note: this run predates `pa_kf_sdpa_mask_expand` /
+> `pa_kf_sdpa_gqa_expand` — the bank is 51 laws today (49 here).
+
 The kernel-level prior-art encoding the novelty sieve's derivability floor was missing: ``mlopt_kernel.priorart.KERNEL_PRIOR_ART_RULES`` — 49 laws, all tagged ``PRIOR_ART``, opt-in through ``known_bank()`` (never in ``KERNEL_RULES`` — they are premises, not play actions).  Where the substrate's ``PRIOR_ART`` encodes the *tensor-level* literature (TASO substitutions, Inductor/XLA rewrites), this bank encodes the **kernel codegen vocabulary** — what Halide/Triton/TVM/cuBLAS already do to a spelled program:
 
 - **Fused-kernel denotations (24)** — each ``kf_*``/  ``om_*`` op expands to its spelled composite (the sink's   own binding body): SiLU/softsign/FMA/SwiGLU gates, the   residue folds, the spelled exp/Σexp softmax site (the   Triton-tutorial fused kernel), softmax·mm, whole-block   SDPA (FlashAttention)   plain and soft-capped (Gemma-2), layernorm/rmsnorm   (Apex/Triton), the cuBLASLt epilogues   (``addmm``/scale/scale-bias/GELU), the decayed-score   ``om_decayed`` element and the chunked-scan   ``om_chunk_scan`` blocks (FLA's chunked schedule —   arities 2–6).

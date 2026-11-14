@@ -57,13 +57,16 @@ lib-kernel-ir = { path = "../lib-kernel-ir" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# lib-kernel-ir is a sibling repo (ADR-0160); until it is published, the
-# search tests read it from the working tree.
+# lib-kernel-ir is a public sibling repo (ADR-0160); the search tests
+# read it from the working tree in dev — public installs get it via
+# ``uv pip install "lib-kernel-ir @ git+https://github.com/handl-lang/lib-kernel-ir.git@v0.1.0"``.
 pythonpath = ["src", "../lib-kernel-ir/src"]
 
 [tool.ty.environment]
 python-version = "3.13"
-extra-paths = ["src"]
+# ../lib-kernel-ir/src mirrors the pytest pythonpath entry — the sibling
+# checkout lib_kernel_ir is read from in dev worktrees.
+extra-paths = ["src", "../lib-kernel-ir/src"]
 
 [tool.ty.src]
 include = ["src"]

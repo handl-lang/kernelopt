@@ -52,9 +52,9 @@ Contents:
 
 ## Wiring
 
-The substrate is consumed as **git+ssh deps on per-package
-subdirectories** of the sibling repos, pinned to `main` — see
-`[tool.uv.sources]` in `pyproject.toml`:
+The substrate is consumed as **git deps on per-package
+subdirectories** of the sibling repos, pinned to the `v0.1.0` tags —
+see `[tool.uv.sources]` in `pyproject.toml`:
 
 | dep | repo | source |
 |---|---|---|

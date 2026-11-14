@@ -22,8 +22,8 @@ The ``gamekit.engine.Board`` protocol is structural — this module
 implements ``observe``/``step`` and a ``KernelReport`` carrying the
 ``reward``/``terminal``/``cost``/``certificate_ok`` fields the
 episode driver reads, without importing the game layer (the
-``kernelopt`` package stays substrate-side for the private-repo
-extraction the split plans).
+``kernelopt`` package stays substrate-side — the game layer is a
+sibling repo consumed through ``mlopt_discovery``/``gamekit``).
 """
 
 from __future__ import annotations
