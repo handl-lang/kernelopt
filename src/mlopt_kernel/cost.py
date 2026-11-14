@@ -85,8 +85,15 @@ def kernel_cost(term: Any, memo: dict | None = None) -> float:
     ``extract_best`` consume it like ``count_cost``.
     """
     memo = {} if memo is None else memo
-    ck = ("kc", term)
-    if ck in memo:
+    # The memo key embeds the term itself — an unhashable leaf (a Const
+    # holding an unhashable value, a duck-typed term) must degrade to
+    # an unmemoised walk, never crash the cost pass.
+    try:
+        ck = ("kc", term)
+        hash(ck)
+    except TypeError:
+        ck = None
+    if ck is not None and ck in memo:
         return memo[ck]
     if isinstance(term, Op):
         w = (
@@ -97,7 +104,9 @@ def kernel_cost(term: Any, memo: dict | None = None) -> float:
             else _OP_WEIGHT.get(term.op, _LAUNCH)
         )
         v = w + sum(kernel_cost(a, memo) for a in term.args)
-        memo[ck] = float(v)
-        return memo[ck]
-    memo[ck] = 0.0
+        if ck is not None:
+            memo[ck] = float(v)
+        return float(v)
+    if ck is not None:
+        memo[ck] = 0.0
     return 0.0

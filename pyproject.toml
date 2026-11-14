@@ -13,6 +13,7 @@ dependencies = [
     "mlopt-discovery",
     "gamekit",
     "benchkit",
+    "lib-kernel-ir",
     "torch>=2.0",
 ]
 
@@ -53,13 +54,13 @@ mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirect
 gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.0" }
 benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.0" }
 mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", tag = "v0.1.0" }
-lib-kernel-ir = { path = "../lib-kernel-ir" }
+lib-kernel-ir = { git = "https://github.com/handl-lang/lib-kernel-ir.git", tag = "v0.1.0" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# lib-kernel-ir is a public sibling repo (ADR-0160); the search tests
-# read it from the working tree in dev — public installs get it via
-# ``uv pip install "lib-kernel-ir @ git+https://github.com/handl-lang/lib-kernel-ir.git@v0.1.0"``.
+# lib-kernel-ir is a declared git dep (tag v0.1.0); the extra
+# ``../lib-kernel-ir/src`` pythonpath keeps dev worktrees resolving the
+# sibling checkout ahead of the installed wheel.
 pythonpath = ["src", "../lib-kernel-ir/src"]
 
 [tool.ty.environment]

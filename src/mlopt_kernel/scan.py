@@ -251,6 +251,32 @@ def _uniform(shapes: list) -> tuple | None:
     return s0
 
 
+def _scalar_leaf(t: Any) -> bool:
+    """Return True when a scale leaf can become a float at run time.
+
+    ``ScanRunner._scalar`` accepts ``None`` (the peeled ``div``-less
+    summand — an exact 1.0), int/float literals, ``Const`` leaves and
+    rank-0 (``()``-shaped) terms; anything else raises *inside*
+    ``run`` after the plan has committed and the spelled fallback is
+    gone.  Rejecting here keeps ``build_scan_plan`` honest: a plan
+    whose divisors aren't provably scalar never forms.
+    """
+    if t is None or isinstance(t, (int, float)):
+        return True
+    if isinstance(t, Const):
+        return isinstance(t.value, (int, float))
+    return _shape_of(t) == ()
+
+
+def _scales_safe(arms: list[dict]) -> bool:
+    """Return True when every intra/cross scale leaf is scalar-safe."""
+    return all(
+        _scalar_leaf(s)
+        for a in arms
+        for s in ([a["intra"][3]] + [c[3] for c in a["cross"]])
+    )
+
+
 def _score_pair(t: Any) -> tuple | None:
     """``matmul(a, b)`` → ``(a, b)``; anything else → ``None``."""
     if isinstance(t, Op) and t.op == "matmul" and len(t.args) == 2:
@@ -489,7 +515,7 @@ def _assemble_plan(arms: list[dict], dim: int) -> dict | None:
     """Validate operand shapes and build the batched schedule."""
     inners, q_terms, pairs = _cross_tables(arms)
     chunk = _uniform_shapes(arms, inners, q_terms)
-    if chunk is None:
+    if chunk is None or not _scales_safe(arms):
         return None
     states = [_state_half(t) for t in inners]
     return {

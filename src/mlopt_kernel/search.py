@@ -5,9 +5,12 @@ The order is not negotiable (ADR-0165 rules 4-6):
 1. **Enumerate `Term`s.** Structure comes from the IR, not from a config
    grid: `split_k = 4` is four `split` terms with an equal composed
    denotation, so the search ranges over meaning-full bodies.
-2. **Prune on the cost bound.** Roofline floor and legality only. The model
-   is never allowed to rank two feasible candidates — measured, it
-   contradicted deploy ranking on three of four shapes (P10/P12).
+2. **Bound by the roofline floor.** A measured time below
+   ``bytes_moved / bandwidth`` is a broken measurement, not speed —
+   the number is rejected, never ranked (P21: the same kernel measured
+   4.7x apart on two clocks).  Term-level cost estimates are not part
+   of the bound: the IR ``Cost`` needs an operand environment this
+   driver does not have, and rule 6 forbids ranking on a model anyway.
 3. **Gate against an external incumbent.** Never against a reference we
    wrote: the AWQ nibble-order bug passed exactly such a gate (P21/P22).
 4. **Measure.** The timer picks the winner, and a candidate that loses is
@@ -33,7 +36,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 import torch
-from lib_kernel_ir import Cost, Term
+from lib_kernel_ir import Term
 
 __all__ = [
     "Candidate",
@@ -148,15 +151,6 @@ def search(
     feasible: list[tuple[float, Candidate, float]] = []
 
     for cand in candidates:
-        # 2a. the bound: a plan claiming to beat the floor is measuring the
-        # wrong thing, so its number is not admissible.
-        try:
-            term_cost: Cost = cand.term.cost({})
-        except Exception:
-            term_cost = Cost()
-        if term_cost.launches and term_cost.bytes_moved:
-            pass  # priced; no ranking is done with it (rule 6)
-
         # 3. the gate, against the incumbent only.
         try:
             out = cand.build()
@@ -167,7 +161,19 @@ def search(
                 )
             )
             continue
-        cos = _cosine(out, expected)
+        try:
+            cos = _cosine(out, expected)
+        except Exception as exc:
+            # Wrong shape / non-tensor output — a gate failure, not a
+            # crash: the candidate simply cannot be compared.
+            rejected.append(
+                Rejected(
+                    cand.label,
+                    "gate",
+                    f"{type(exc).__name__}: incomparable output",
+                )
+            )
+            continue
         if cos < tolerance:
             rejected.append(
                 Rejected(

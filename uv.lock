@@ -151,6 +151,14 @@ wheels = [
 ]
 
 [[package]]
+name = "lib-kernel-ir"
+version = "0.0.1"
+source = { git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.0#7bd7fbe682ec5530a24fbe26e133fb2b447e1322" }
+dependencies = [
+    { name = "torch" },
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -313,6 +321,7 @@ source = { editable = "." }
 dependencies = [
     { name = "benchkit" },
     { name = "gamekit" },
+    { name = "lib-kernel-ir" },
     { name = "mlopt-core" },
     { name = "mlopt-discovery" },
     { name = "torch" },
@@ -337,6 +346,7 @@ probes = [
 requires-dist = [
     { name = "benchkit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fbenchkit&tag=v0.1.0" },
     { name = "gamekit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fgamekit&tag=v0.1.0" },
+    { name = "lib-kernel-ir", git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.0" },
     { name = "mlopt-core", git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-core&tag=v0.1.0" },
     { name = "mlopt-discovery", git = "https://github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-discovery&tag=v0.1.0" },
     { name = "torch", specifier = ">=2.0" },

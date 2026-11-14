@@ -1,11 +1,13 @@
 # Note — the kernel-engineer board (reusing the game layer)
 
-**PRIVATE. 2026-10-20: spike verdict GO — both criteria passed**
-(commit `3801504`, `packages/mlopt-kernel/`): verified-equal kernels at
-lower measured cost (silu 2.24×, softsign 3.13×, FMA 1.36× on CUDA
-fp32) and the trained player beat playbook/random on kernel boards
-(0.49 / 0.34 / 0.08, 24 held-out cases).  Stays private until it earns
-publication — absent from org docs, pitch, paper.
+**PUBLIC repo — this note ships in the public tree.  2026-10-20:
+spike verdict GO — both criteria passed** (commit `3801504`,
+`packages/mlopt-kernel/`): verified-equal kernels at lower measured
+cost (silu 2.24×, softsign 3.13×, FMA 1.36× on CUDA fp32) and the
+trained player beat playbook/random on kernel boards
+(0.49 / 0.34 / 0.08, 24 held-out cases).  The repo went public
+(plan 0032 phase 4); the paper remains a draft — see
+`paper/README.md`.
 
 ## 2026-10-20 (later): expansion arm — measured results
 
