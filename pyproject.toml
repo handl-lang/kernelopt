@@ -1,11 +1,12 @@
 [build-system]
-requires = ["setuptools>=68.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlopt-kernel"
 version = "0.1.0dev"
-description = "kernelopt (private): the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain.  Split out of handl-lang/graphopt (plan 0032 phase 4)."
+description = "kernelopt: the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain.  Split out of handl-lang/graphopt (plan 0032 phase 4)."
+license = "MIT OR Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "mlopt-core",
@@ -36,21 +37,22 @@ probes = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# --- substrate deps: git+ssh on the split repos --------------
+# --- substrate deps: git on the split repos ------------------
 # plan 0032 phase 4: eqsat (substrate) / gamekit (game layer) /
 # graphopt (domain) are separate repos now.
 # kernelopt consumes the substrate as pinned git deps on per-package
 # subdirectories of handl-lang/graphopt — the phase-4 seam.
-# Pinned to the branch for now; move to a tag/rev once the upstream
-# surface settles.
+# Distribution is git-URL-at-tag: deps pin the ``v0.1.0`` tags on
+# eqsat/gamekit/graphopt — bump deliberately on releases.
+# See graphopt/docs/reports/git_url_distribution.md.
 [tool.uv.sources]
-mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", branch = "main" }
-mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", branch = "main" }
-mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", branch = "main" }
-mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", branch = "main" }
-gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", branch = "main" }
-benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", branch = "main" }
-mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", branch = "main" }
+mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", tag = "v0.1.0" }
+mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", tag = "v0.1.0" }
+mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", tag = "v0.1.0" }
+mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", tag = "v0.1.0" }
+gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.0" }
+benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.0" }
+mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", tag = "v0.1.0" }
 lib-kernel-ir = { path = "../lib-kernel-ir" }
 
 [tool.pytest.ini_options]
