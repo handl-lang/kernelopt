@@ -34,11 +34,11 @@ resolves the registered seats (``linear``/``linear-greedy``/
 
 from __future__ import annotations
 
-import hashlib
 import random
 from typing import Any
 
 from discoverykit import lawdata
+from gamekit.gamedata import bucket as _bucket
 from gamekit.players import (
     ActionFeats,
     Bias,
@@ -317,23 +317,21 @@ def _kernel_state(state: Any) -> dict[str, float]:
     return out
 
 
-def _bucket(name: Any, kind: str) -> int:
-    """Stable-hash *name* into ``META_ARENA_HASH_BUCKETS[kind]``.
+def _kernel_rule_bucket(name: Any) -> int:
+    """Bucket a rule name into ``META_ARENA_HASH_BUCKETS["rule"]``.
 
-    The ``meta_player`` bucketing, copied verbatim — the shipped
-    ``KERNEL_PLAYER_WEIGHTS`` was trained against this hash, so the
-    rule-name → ``a:r:*`` mapping must not drift.
+    The canonical :func:`gamekit.gamedata.bucket` bound at import —
+    the shipped ``KERNEL_PLAYER_WEIGHTS`` was trained against this
+    hash, so the rule-name → ``a:r:*`` mapping must not drift.
     """
-    width = lawdata.META_ARENA_HASH_BUCKETS[kind]
-    h = hashlib.sha256(str(name).encode("utf-8")).digest()
-    return int.from_bytes(h[:4]) % width
+    return _bucket(name, "rule", lawdata.META_ARENA_HASH_BUCKETS)
 
 
 def _kernel_act(
     action: Any, _row: dict[str, float]
 ) -> dict[str, float]:
     """Return the fired law's identity bucket — action features."""
-    return {f"a:r:{_bucket(action, 'rule'):02d}": 1.0}
+    return {f"a:r:{_kernel_rule_bucket(action):02d}": 1.0}
 
 
 def _kernel_rel(
