@@ -24,6 +24,11 @@ W = Var("w", TensorType((K, N)))
 B = Param("b", TensorType((N,)))
 X = Var("x", TensorType((4, 8)))
 Y = Var("y", TensorType((4, 8)))
+# ADR-0171 spellings: weight-first GEMV, F.linear, layout, pointwise.
+WM = Var("wm", TensorType((4, K)))  # [m, k]
+WL = Var("wl", TensorType((N, K)))  # [out, in]
+Z = Var("z", TensorType((2, 3, 4)))
+U = Var("u", TensorType(None))  # untyped — rank unknown
 
 
 def env() -> dict[str, torch.Tensor]:
@@ -34,6 +39,9 @@ def env() -> dict[str, torch.Tensor]:
         "b": torch.randn(N, generator=g),
         "x": torch.randn(4, 8, generator=g),
         "y": torch.randn(4, 8, generator=g),
+        "wm": torch.randn(4, K, generator=g),
+        "wl": torch.randn(N, K, generator=g),
+        "z": torch.randn(2, 3, 4, generator=g),
     }
 
 
@@ -94,11 +102,29 @@ def test_bare_var_is_a_leaf() -> None:
     assert translate(B) == Leaf("b")
 
 
-def test_matmul_weight_first_declines_with_reason() -> None:
-    """[m,k] @ [k] -> [m] needs a transpose the IR does not have."""
-    wm = Var("wm", TensorType((4, K)))
-    with pytest.raises(UnsupportedOp, match="transpose"):
-        translate(Op.make("matmul", wm, V))
+def test_matmul_weight_first_maps_through_transpose() -> None:
+    """[m,k] @ [k] -> [m] is dot(transpose(W), v) — ADR-0171."""
+    kit = translate(Op.make("matmul", WM, V))
+
+    assert isinstance(kit, Term)
+    assert kit.op == "dot"
+    weight, vec = kit.args
+    assert isinstance(weight, Term) and weight.op == "transpose"
+    assert weight.args == (Leaf("wm"), 0, 1)
+    assert vec == Leaf("v")
+
+    e = env()
+    torch.testing.assert_close(
+        kit.denote(e), torch.matmul(e["wm"], e["v"])
+    )
+    assert kit.cost(e).bytes_moved > 0
+    assert from_json(to_json(kit)) == kit
+
+
+def test_matmul_weight_first_dim_mismatch_declines() -> None:
+    bad = Var("bad", TensorType((4, K + 1)))
+    with pytest.raises(UnsupportedOp, match="contracted dims"):
+        translate(Op.make("matmul", bad, V))
 
 
 def test_matmul_general_declines() -> None:
@@ -113,22 +139,153 @@ def test_matmul_contracted_dim_mismatch_declines() -> None:
         translate(Op.make("matmul", V, bad))
 
 
+def test_linear_maps_with_and_without_bias() -> None:
+    """linear(v[in], W[out,in], b) -> bias(dot(Wᵀ, v), b)."""
+    e = env()
+    with_bias = translate(Op.make("linear", V, WL, B))
+    assert isinstance(with_bias, Term) and with_bias.op == "bias"
+    dot, bias_leaf = with_bias.args
+    assert isinstance(dot, Term) and dot.op == "dot"
+    weight, vec = dot.args
+    assert isinstance(weight, Term) and weight.op == "transpose"
+    assert weight.args == (Leaf("wl"), 0, 1)
+    assert vec == Leaf("v") and bias_leaf == Leaf("b")
+    torch.testing.assert_close(
+        with_bias.denote(e),
+        torch.nn.functional.linear(e["v"], e["wl"], e["b"]),
+    )
+
+    no_bias = translate(Op.make("linear", V, WL))
+    assert isinstance(no_bias, Term) and no_bias.op == "dot"
+    torch.testing.assert_close(
+        no_bias.denote(e),
+        torch.nn.functional.linear(e["v"], e["wl"]),
+    )
+
+
+def test_linear_batched_input_declines() -> None:
+    """[batch, in] @ [out, in] is a matmul, not a dot."""
+    with pytest.raises(UnsupportedOp, match="rank-1"):
+        translate(Op.make("linear", X, WL))
+
+
+def test_transpose_maps_attrs_to_positional_dims() -> None:
+    kit = translate(Op.make("transpose", W, dim0=0, dim1=1))
+    assert kit == Term("transpose", (Leaf("w"), 0, 1))
+    e = env()
+    torch.testing.assert_close(kit.denote(e), e["w"].t())
+
+    # No attrs -> the torch binding's (-2, -1) default.
+    kit_default = translate(Op.make("transpose", W))
+    assert kit_default == Term("transpose", (Leaf("w"), -2, -1))
+    torch.testing.assert_close(kit_default.denote(e), e["w"].t())
+
+
+def test_transpose_rejects_non_int_axis() -> None:
+    term = Op.make("transpose", W, dim0="x", validate=False)
+    with pytest.raises(UnsupportedOp, match="not an int axis"):
+        translate(term)
+
+
+def test_permute_maps_dims_attr() -> None:
+    kit = translate(Op.make("permute", Z, dims=[2, 0, 1]))
+    assert kit == Term("permute", (Leaf("z"), 2, 0, 1))
+    e = env()
+    torch.testing.assert_close(kit.denote(e), e["z"].permute(2, 0, 1))
+
+
+def test_permute_no_dims_reverses_all_axes() -> None:
+    """mlopt's permute() convention: reverse — needs a known rank."""
+    kit = translate(Op.make("permute", Z))
+    assert kit == Term("permute", (Leaf("z"), 2, 1, 0))
+    e = env()
+    torch.testing.assert_close(kit.denote(e), e["z"].permute(2, 1, 0))
+
+
+def test_permute_no_dims_unknown_rank_declines() -> None:
+    with pytest.raises(UnsupportedOp, match="unknown rank"):
+        translate(Op.make("permute", U, validate=False))
+
+
+def test_permute_wrong_dim_count_declines() -> None:
+    term = Op.make("permute", Z, dims=[0, 1], validate=False)
+    with pytest.raises(UnsupportedOp, match="rank-3"):
+        translate(term)
+
+
+@pytest.mark.parametrize(
+    "op_name,args",
+    [
+        ("mul", (X, Y)),
+        ("sub", (X, Y)),
+        ("neg", (X,)),
+        ("relu", (X,)),
+        ("exp", (X,)),
+        ("sigmoid", (X,)),
+        ("tanh", (X,)),
+        ("gelu", (X,)),
+        ("silu", (X,)),
+    ],
+)
+def test_pointwise_ops_map_name_for_name(op_name, args) -> None:
+    term = Op.make(op_name, *args, validate=False)
+    kit = translate(term)
+    assert isinstance(kit, Term) and kit.op == op_name
+    leaves = [a.name for a in kit.args if isinstance(a, Leaf)]
+    assert leaves == [a.name for a in args]
+
+    e = env()
+    want = getattr(torch, op_name, None)
+    if want is None:
+        want = getattr(torch.nn.functional, op_name)
+    if len(args) == 2:
+        want = want(e["x"], e["y"])
+    else:
+        want = want(e["x"])
+    torch.testing.assert_close(kit.denote(e), want)
+    assert kit.cost(e).ops > 0
+
+
+def test_pointwise_with_const_declines() -> None:
+    with pytest.raises(UnsupportedOp, match="scalar"):
+        translate(Op.make("mul", X, Const(2.0), validate=False))
+
+
+def test_pointwise_with_attrs_declines() -> None:
+    term = Op.make("relu", X, approximate=True, validate=False)
+    with pytest.raises(UnsupportedOp, match="attrs"):
+        translate(term)
+
+
+def test_gated_tail_denotes_end_to_end() -> None:
+    """silu(mul(linear(v, W), u)) — a decoder-style tail, all bridged."""
+    u = Var("u", TensorType((N,)))
+    e = env()
+    e["u"] = torch.randn(N, generator=torch.Generator().manual_seed(3))
+    term = Op.make(
+        "silu",
+        Op.make("mul", Op.make("linear", V, WL), u, validate=False),
+        validate=False,
+    )
+    kit = translate(term)
+    want = torch.nn.functional.silu(
+        torch.nn.functional.linear(e["v"], e["wl"]) * e["u"]
+    )
+    torch.testing.assert_close(kit.denote(e), want)
+
+
 @pytest.mark.parametrize(
     "op_name",
     [
-        "mul",
-        "sub",
-        "relu",
-        "sigmoid",
-        "exp",
         "sum",
         "mean",
         "softmax",
-        "linear",
         "conv2d",
         "split",  # name collision: mlopt split != kernel-ir split
         "reshape",
-        "permute",
+        "flatten",
+        "div",
+        "sqrt",
         "layer_norm",
         "sdpa",
         "rms_norm",
@@ -164,12 +321,12 @@ def test_const_root_and_non_terms_decline() -> None:
 
 
 def test_nested_unmappable_op_declines_inside() -> None:
-    """add(relu(x), w): the inner op's decline propagates, named."""
+    """add(sum(x), w): the inner op's decline propagates, named."""
     term = Op.make(
         "add",
-        Op.make("relu", X, validate=False),
+        Op.make("sum", X, validate=False),
         Var("w1", TensorType((4, 8))),
     )
     with pytest.raises(UnsupportedOp) as exc:
         translate(term)
-    assert exc.value.op == "relu"
+    assert exc.value.op == "sum"

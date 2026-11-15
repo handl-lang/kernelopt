@@ -113,3 +113,29 @@ have to land in `lib-kernel-ir` first.
   `UnsupportedOp`.
 - `tests/test_ir_bridge.py` — 28 tests.
 - This report.
+
+## Addendum — ADR-0171 vocabulary extension (proposed, pending ratification)
+
+`lib-kernel-ir` gained eleven ops (`transpose`, `permute`, `mul`,
+`sub`, `neg`, `relu`, `exp`, `sigmoid`, `tanh`, `gelu`, `silu` —
+ADR-0171, `host/project/adrs/0171-*.md`, status **proposed**) and the
+bridge was extended to match. Coverage moved from **2 ops to 14 mlopt
+op names** (`matmul` two spellings, `add`, `linear`, `transpose`,
+`permute`, and nine pointwise):
+
+- `matmul(W[m,k], v[k])` → `dot(transpose(W,0,1), v)` — denotes
+  `W @ v` exactly (fp32 inside `dot`, as before).
+- `linear(x[in], W[out,in], b?)` → `bias(dot(transpose(W), x), b)` —
+  rank-1 inputs only; batched inputs still decline.
+- `transpose`/`permute` attrs (`dim0`/`dim1`, `dim`/`dims`/`order`)
+  become positional int args; `permute()` with no dims reverses all
+  axes when the rank is known, declines otherwise.
+- Pointwise ops map name-for-name; `Const` operands and attrs still
+  decline (cost-model hazard / no positional counterpart).
+
+Still declined: reductions (`sum`/`mean`/`max`), norms, `softmax`,
+`sdpa`, `conv*`, `split`/`reshape`/`flatten` and the other ~80 ops —
+the ADR's "Not doing" list. `tests/test_ir_bridge.py` is now 45
+tests; the previously-declined spellings (weight-first `matmul`,
+`linear`, `transpose`, `permute`, the pointwise set) have positive
+denotation tests against torch.
