@@ -38,6 +38,7 @@ import hashlib
 import random
 from typing import Any
 
+from discoverykit import lawdata
 from gamekit.players import (
     ActionFeats,
     Bias,
@@ -49,7 +50,6 @@ from gamekit.players import (
 )
 from gamekit.players.registry import PlayerSpec, register_player
 from mlopt_core.ir import Const, Op, TensorType, Var
-from mlopt_discovery import lawdata
 from mlopt_discovery.play import DOMAINS, spec_domain
 
 from mlopt_kernel.weights import KERNEL_PLAYER_WEIGHTS
@@ -267,7 +267,7 @@ def _kernel_board(case: Any) -> Any:
     small charge and ``stop`` — declining the remaining evaluations —
     is the skill the board scores.
     """
-    from mlopt_discovery.verifier import verify_law
+    from discoverykit.verifier import verify_law
 
     from mlopt_kernel import KernelBoard
 
