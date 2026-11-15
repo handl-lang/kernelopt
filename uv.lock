@@ -300,7 +300,7 @@ dependencies = [
 [[package]]
 name = "mlopt-core"
 version = "0.1.0.dev0"
-source = { git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-core&tag=v0.1.0#f52b18dd47a5ca9a0ec1e00dd1f430451067e110" }
+source = { git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-core&tag=v0.1.0#35f473b86cd18c8a8e590ba595a575e3a590b171" }
 
 [[package]]
 name = "mlopt-discovery"
@@ -365,7 +365,7 @@ probes = [{ name = "mlopt-carriers", git = "https://github.com/handl-lang/grapho
 [[package]]
 name = "mlopt-orchestrator"
 version = "0.1.0.dev0"
-source = { git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-orchestrator&tag=v0.1.0#f52b18dd47a5ca9a0ec1e00dd1f430451067e110" }
+source = { git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-orchestrator&tag=v0.1.0#35f473b86cd18c8a8e590ba595a575e3a590b171" }
 dependencies = [
     { name = "mlopt-core" },
 ]
