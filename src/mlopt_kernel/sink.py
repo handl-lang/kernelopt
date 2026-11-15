@@ -11,7 +11,10 @@ the ``linear`` GEMM+epilogue slot, and the decayed-scan vocabulary
 need.  Each fused op (``FUSED_KERNEL_OPS``) lowers to
 ``torch.compile`` of its composite body — one fused kernel
 (Inductor-generated, Triton on CUDA) where the spelled program
-launched an op at a time.
+launched an op at a time.  Whole-subgraph *patterns*
+(:mod:`mlopt_kernel.patterns` — today the residual-projection
+``add(x, linear/matmul(y, …))``) are detected structurally at
+lowering and dispatch to fused template runners the same way.
 
 Verify-first, per the ONNX precedent: :meth:`KernelSink.verify`
 runs the spelled reference and the scheduled candidate in *this*
@@ -33,6 +36,10 @@ from mlopt_core.ops import OpTable
 from mlopt_core.ports import ExecutorSpec, OpRegistry
 
 from mlopt_kernel.laws import FUSED_KERNEL_OPS, SCHEDULED_KERNEL_OPS
+from mlopt_kernel.patterns import (
+    ResidualProjRunner,
+    match_residual_proj,
+)
 from mlopt_kernel.scan import ScanRunner, build_scan_plan
 
 if TYPE_CHECKING:
@@ -391,6 +398,15 @@ class KernelExecutor:
     per-op dispatch tape; when the term doesn't re-parse as a scan
     the node falls back to its spelled ``cat`` body — never a silent
     drop.  ``compile_fused=False`` always runs the spelled body.
+
+    *Pattern sites* (:mod:`mlopt_kernel.patterns`): whole-subgraph
+    shapes detected structurally at lowering — today the
+    residual-projection ``add(x, linear/matmul(y, …))``.  Under
+    ``compile_fused`` a matched node dispatches to a fused template
+    runner (one compiled region over ``x + proj(y)``); a miss keeps
+    the spelled per-op dispatch.  No marker op is minted and the cost
+    model is untouched — this is a delivery-time schedule, not a
+    search move.
     """
 
     def __init__(
@@ -414,6 +430,7 @@ class KernelExecutor:
         self._static: dict[int, Any] = {}
         self._memo: dict[int, Any] = {}
         self._scans: dict[int, Any] = {}
+        self._patterns: dict[int, Any] = {}
 
     def forward(self, *xs: Any) -> Any:
         """Run the program on positional inputs in ``ir.inputs`` order."""
@@ -479,8 +496,22 @@ class KernelExecutor:
             *[self._eval(a, env) for a in t.args], **dict(t.attrs)
         )
 
+    def _patterned(self, t: Op) -> Any:
+        """Return *t*'s fused pattern runner, or ``None`` (cached)."""
+        key = id(t)
+        runner = self._patterns.get(key, _MISSING)
+        if runner is _MISSING:
+            plan = match_residual_proj(t)
+            runner = None if plan is None else ResidualProjRunner(plan)
+            self._patterns[key] = runner
+        return runner
+
     def _apply(self, t: Op, env: dict) -> Any:
         """Dispatch one op node — fused ops through the compiled path."""
+        if self.compile_fused:
+            pat = self._patterned(t)
+            if pat is not None:
+                return pat.run(lambda u: self._eval(u, env))
         if t.op in SCHEDULED_KERNEL_OPS and self.compile_fused:
             return self._scheduled(t, env)
         fn = (
