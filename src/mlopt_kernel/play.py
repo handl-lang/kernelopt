@@ -421,6 +421,12 @@ def _kernel_deliver(board: Any, case: Any, traj: Any) -> dict:
     The deliver half of the kernel board: the spelled source and the
     candidate the episode's extraction picked are both lowered in the
     sink's runtime and compared on random feeds — verify-first.
+
+    Honesty contract: a measurement arm, not the enforced
+    ``Optimizer.lower(verify=True)`` shipping gate — it reports the
+    verdict rather than raising on it.  ``delivered`` is ``rep.passed``:
+    a lowered-but-unverified candidate is marked ``delivered_unverified``
+    and is NEVER reported as ``delivered``.
     """
     import torch
     from mlopt_core.ir import IR
@@ -442,14 +448,17 @@ def _kernel_deliver(board: Any, case: Any, traj: Any) -> dict:
     )
     rep = sink.verify(ref, opt, feeds)
     t = traj.terminal
-    return {
-        "delivered": True,
+    out = {
+        "delivered": bool(rep.passed),
         "verified": rep.passed,
         "max_abs": rep.max_abs,
         "cost": getattr(t, "cost", None),
         "cert": getattr(t, "certificate_ok", None),
         "reward": traj.total,
     }
+    if not rep.passed:
+        out["delivered_unverified"] = True
+    return out
 
 
 # ---------------------------------------------------------------------------

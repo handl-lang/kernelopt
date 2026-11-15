@@ -1432,6 +1432,37 @@ class TestPlayDomain:
         res = d.deliver(board, case, traj)
         assert res["delivered"] and res["verified"]
 
+    def test_deliver_verify_fail_is_unverified_not_delivered(
+        self, monkeypatch
+    ):
+        """A failed verify verdict never reads as a delivered artifact."""
+        from gamekit import engine
+        from mlopt_discovery import play
+
+        import mlopt_kernel
+        import mlopt_kernel.play
+        from mlopt_kernel.sink import KernelVerifyReport
+
+        class _FailSink:
+            def lower(self, ir, params=None):
+                return lambda *a: torch.zeros(4, 8, dtype=torch.float64)
+
+            def verify(self, ref, opt, feeds, **kw):
+                return KernelVerifyReport(
+                    max_abs=1.0, max_rel=1.0, passed=False
+                )
+
+        monkeypatch.setattr(mlopt_kernel, "KernelSink", _FailSink)
+        mlopt_kernel.play.register()
+        d = play.DOMAINS["kernel"]
+        case = d.cases(0, 8)[0]
+        board = d.board_of(case)
+        traj = engine.run_episode(board, d.scripted(), 8)
+        res = d.deliver(board, case, traj)
+        assert res["delivered"] is False
+        assert res["verified"] is False
+        assert res["delivered_unverified"] is True
+
     def test_cli_smoke(self):
         """``python -m mlopt_kernel.play`` — the CLI end to end."""
         from mlopt_kernel import play as kplay
