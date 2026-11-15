@@ -56,11 +56,11 @@ gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "p
 benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.1" }
 mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", tag = "v0.1.1" }
 discoverykit = { git = "https://github.com/handl-lang/discoverykit.git", subdirectory = "packages/discoverykit", tag = "v0.1.1" }
-lib-kernel-ir = { git = "https://github.com/handl-lang/lib-kernel-ir.git", tag = "v0.1.0" }
+lib-kernel-ir = { git = "https://github.com/handl-lang/lib-kernel-ir.git", tag = "v0.1.1" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# lib-kernel-ir is a declared git dep (tag v0.1.0); the extra
+# lib-kernel-ir is a declared git dep (tag v0.1.1); the extra
 # ``../lib-kernel-ir/src`` pythonpath keeps dev worktrees resolving the
 # sibling checkout ahead of the installed wheel.
 pythonpath = ["src", "../lib-kernel-ir/src"]

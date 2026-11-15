@@ -164,7 +164,7 @@ wheels = [
 [[package]]
 name = "lib-kernel-ir"
 version = "0.0.1"
-source = { git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.0#7bd7fbe682ec5530a24fbe26e133fb2b447e1322" }
+source = { git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.1#263ff42030b2d0f871923f80a407cfe71e3a3ca3" }
 dependencies = [
     { name = "torch" },
 ]
@@ -363,7 +363,7 @@ probes = [
 requires-dist = [
     { name = "benchkit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fbenchkit&tag=v0.1.1" },
     { name = "gamekit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fgamekit&tag=v0.1.1" },
-    { name = "lib-kernel-ir", git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.0" },
+    { name = "lib-kernel-ir", git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.1" },
     { name = "mlopt-core", git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-core&tag=v0.1.1" },
     { name = "mlopt-discovery", git = "https://github.com/handl-lang/graphopt.git?subdirectory=packages%2Fmlopt-discovery&tag=v0.1.1" },
     { name = "torch", specifier = ">=2.0" },
