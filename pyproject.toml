@@ -47,15 +47,15 @@ where = ["src"]
 # eqsat/gamekit/graphopt — bump deliberately on releases.
 # See graphopt/docs/reports/git_url_distribution.md.
 [tool.uv.sources]
-mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", tag = "v0.1.3" }
-mlopt-dtypes = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-dtypes", tag = "v0.1.3" }
-mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", tag = "v0.1.9" }
-mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", tag = "v0.1.3" }
-mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", tag = "v0.1.9" }
-gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.4" }
-benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.4" }
-mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", tag = "v0.1.9" }
-discoverykit = { git = "https://github.com/handl-lang/discoverykit.git", subdirectory = "packages/discoverykit", tag = "v0.1.7" }
+mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", tag = "v0.1.4" }
+mlopt-dtypes = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-dtypes", tag = "v0.1.4" }
+mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", tag = "v0.1.10" }
+mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", tag = "v0.1.4" }
+mlopt-carriers = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-carriers", tag = "v0.1.10" }
+gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.5" }
+benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.5" }
+mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", tag = "v0.1.10" }
+discoverykit = { git = "https://github.com/handl-lang/discoverykit.git", subdirectory = "packages/discoverykit", tag = "v0.1.8" }
 lib-kernel-ir = { git = "https://github.com/handl-lang/lib-kernel-ir.git", tag = "v0.1.1" }
 
 [tool.pytest.ini_options]
