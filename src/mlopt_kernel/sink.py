@@ -1,7 +1,7 @@
 # ruff: noqa: RUF002, RUF003 — math notation (≡, σ, −, ·) in docstrings.
 """``KernelSink`` — the kernel codegen backend behind the Sink port.
 
-A peer of ``mlopt_onnx.OnnxSink``, smaller: the backend is a *torch
+A peer of ``kit_onnx.OnnxSink``, smaller: the backend is a *torch
 composite*.  The binding table is a deliberately small op set: the
 elementwise + reduction surface the codegen law bank can reach, the
 layout ops real extracted carriers carry (``split``/``concat``/
