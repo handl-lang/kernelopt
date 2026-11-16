@@ -1,7 +1,7 @@
-"""Bridge: ``mlopt_core.ir`` terms -> ``lib_kernel_ir`` Terms.
+"""Bridge: ``mlopt_core.term`` terms -> ``lib_kernel_ir`` Terms.
 
 Phase-C spike of the handl-bridge proposal: can a term the mlopt
-pipeline extracts (``Optimizer`` phase 3, an ``mlopt_core.ir.Op`` DAG)
+pipeline extracts (``Optimizer`` phase 3, an ``mlopt_core.term.Op`` DAG)
 be handed to kernelopt's codegen search as a ``lib_kernel_ir.Term``?
 
 The honest answer is *a recognizer, not a translator* — and after
@@ -58,7 +58,7 @@ from collections.abc import Container
 from typing import Any
 
 from lib_kernel_ir import Leaf, Term
-from mlopt_core.ir import Const, Op, Param, TensorType, Var
+from mlopt_core.term import Const, Op, Param, TensorType, Var
 
 __all__ = ["UnsupportedOp", "translate"]
 
@@ -378,7 +378,7 @@ def _pointwise(term: Op, k_leaves: Container[str]) -> Term:
 def translate(
     term: Any, *, k_leaves: Container[str] = ()
 ) -> Term | Leaf | int | float:
-    """Lower an ``mlopt_core.ir`` term to a ``lib_kernel_ir`` node.
+    """Lower an ``mlopt_core.term`` term to a ``lib_kernel_ir`` node.
 
     Returns a :class:`lib_kernel_ir.Term` for mapped ops, a
     :class:`Leaf` for a bare ``Var``/``Param`` root, and raises
@@ -395,7 +395,7 @@ def translate(
         )
     if not isinstance(term, Op):
         raise UnsupportedOp(
-            type(term).__name__, "not an mlopt_core.ir term"
+            type(term).__name__, "not an mlopt_core.term term"
         )
     if term.op == "matmul":
         return _matmul(term, k_leaves)
