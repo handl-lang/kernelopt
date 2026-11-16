@@ -209,7 +209,7 @@ class TestRunner:
         ``linear`` x10 closing every sub-layer with an ``add``).
         """
         import torch.nn as nn
-        from mlopt_torch.adapters import TorchSource
+        from kit_torch.adapters import TorchSource
 
         class Block(nn.Module):
             def __init__(self, d=32):

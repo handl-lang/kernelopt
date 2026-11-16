@@ -10,10 +10,10 @@ license = "MIT OR Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "mlopt-core",
-    # kit-discovery's runtime dep closure reaches mlopt-torch; declare
+    # kit-discovery's runtime dep closure reaches kit-torch; declare
     # it directly so the [tool.uv.sources] git pin applies (uv does
     # not always propagate sources to transitive-only requirements).
-    "mlopt-torch",
+    "kit-torch",
     "kit-discovery",
     "gamekit",
     "benchkit",
@@ -53,7 +53,7 @@ where = ["src"]
 [tool.uv.sources]
 mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", tag = "v0.1.10" }
 mlopt-dtypes = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-dtypes", tag = "v0.1.10" }
-mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", tag = "v0.1.21" }
+kit-torch = { git = "https://github.com/handl-lang/kit-torch.git", tag = "v0.1.0" }
 mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", tag = "v0.1.10" }
 kit-carriers = { git = "https://github.com/handl-lang/kit-carriers.git", tag = "v0.1.3" }
 gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.12" }

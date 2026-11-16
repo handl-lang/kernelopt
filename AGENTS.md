@@ -52,7 +52,7 @@ MIT OR Apache-2.0.
 Every entry in `[tool.uv.sources]` (`pyproject.toml`) — git deps
 pinned to the `v0.1.0` tags on the split sibling repos'
 per-package subdirectories: `mlopt-core` and
-`mlopt-orchestrator` (`handl-lang/eqsat`), `mlopt-torch`,
+`mlopt-orchestrator` (`handl-lang/eqsat`), `kit-torch`,
 `kit-carriers` (the `probes` dep-group only — the vocab probe
 lifts the retnet carrier through `kit_carriers.om`),
 `kit-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`

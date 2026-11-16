@@ -60,7 +60,7 @@ see `[tool.uv.sources]` in `pyproject.toml`:
 |---|---|---|
 | `mlopt-core` | `handl-lang/eqsat` | `packages/mlopt-core` |
 | `mlopt-orchestrator` | `handl-lang/eqsat` | `packages/mlopt-orchestrator` |
-| `mlopt-torch` | `handl-lang/graphopt` | `packages/mlopt-torch` |
+| `kit-torch` | `handl-lang/graphopt` | `packages/kit-torch` |
 | `kit-carriers` | `handl-lang/graphopt` | `packages/kit-carriers` |
 | `kit-discovery` | `handl-lang/graphopt` | `packages/kit-discovery` |
 | `gamekit` | `handl-lang/gamekit` | `packages/gamekit` |

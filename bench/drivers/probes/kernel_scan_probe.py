@@ -79,7 +79,7 @@ def main() -> None:
 
     from mlopt_core.ir import IR
     from mlopt_orchestrator.optimize import _lower_extracted
-    from mlopt_torch.adapters import TorchSink
+    from kit_torch.adapters import TorchSink
 
     from mlopt_kernel import KernelSink, kernel_cost
 

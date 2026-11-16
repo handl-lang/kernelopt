@@ -81,7 +81,7 @@ def _saturate(t: int, k: int, iters: int, budget: int, chunk: int):
         MUL_DIV_SWAP,
         SPLIT_SCALAR_RULES,
     )
-    from mlopt_torch.adapters import TorchSource
+    from kit_torch.adapters import TorchSource
 
     bridges = [
         MUL_DIV_SWAP,
@@ -315,7 +315,7 @@ def main() -> None:
 
     from mlopt_core.ir import IR
     from mlopt_orchestrator.optimize import _lower_extracted
-    from mlopt_torch.adapters import TorchSink
+    from kit_torch.adapters import TorchSink
 
     from mlopt_kernel import KernelSink, kernel_cost
 
