@@ -23,7 +23,7 @@ fused chunk-scan.  Whether a manual CUDA-graph capture or a
 whole-graph ``torch.compile`` of the executor recovers the
 schedule is measured, not asserted.
 
-Run (needs the *parent* env — ``kit_carriers``/``mlopt_cuda`` are
+Run (needs the *parent* env — ``kit_carriers``/``kit_cuda`` are
 deliberately not kernelopt deps)::
 
     PYTHONPATH=/path/to/kernelopt/src \
