@@ -23,7 +23,7 @@ from mlopt_core.ir import Const, Op, TensorType, Var
 from mlopt_core.laws import tags
 from mlopt_core.laws.serialize import alpha_key
 from mlopt_core.meta import instantiate_pattern
-from mlopt_discovery.verifier import verify_law
+from kit_discovery.verifier import verify_law
 
 from mlopt_kernel import KERNEL_RULES
 from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES

@@ -7,7 +7,7 @@ The codegen port of graphopt's
 1. **cert** — the law certifies itself: on a real firing instance its
    own rewrite derives the instance sides with a
    standalone-replayable certificate (the shared substrate's
-   ``mlopt_discovery.verifier.verify_law`` + ``verify_certificate`` —
+   ``kit_discovery.verifier.verify_law`` + ``verify_certificate`` —
    reused, not rebuilt).
 2. **beat** — the law *pays*: on at least one registered
    ``bench.discovery.kernel`` case, saturating the spelled term under
@@ -65,7 +65,7 @@ synthesized binding domain (``evidence._synth_sites``), and finally a
 uniform-shape metavariable binding.
 
 The truth oracle is ``KernelSink.verify`` on fp64 feeds — the shared
-``mlopt_discovery.oracle`` has no ``kf_*``/``om_*`` bindings.  A
+``kit_discovery.oracle`` has no ``kf_*``/``om_*`` bindings.  A
 non-finite evaluation is ``indeterminate``, never a refute.
 
 Run::
@@ -88,6 +88,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from kit_discovery import lawdata, verifier
+from kit_discovery.verifier import verify_law
 from mlopt_core.egraph import EGraph, verify_certificate
 from mlopt_core.ir import IR, Const, Op, TensorType, Var, op_repr
 from mlopt_core.laws import (
@@ -108,8 +110,6 @@ from mlopt_core.meta import (
     match_pattern,
     pattern_metavars,
 )
-from mlopt_discovery import lawdata, verifier
-from mlopt_discovery.verifier import verify_law
 from mlopt_orchestrator.optimize import default_rules
 
 from mlopt_kernel import KERNEL_RULES, KernelSink, kernel_cost
@@ -359,7 +359,7 @@ def _corpus_instance(
 
 def _synth_instance(rule: Any, limit: int) -> tuple[Any, Any] | None:
     """A guard-accepted site from the gauntlet's binding enumeration."""
-    from mlopt_discovery.evidence import _synth_sites
+    from kit_discovery.evidence import _synth_sites
 
     for bound, lhs_t in _synth_sites(rule.lhs, rule.rhs, limit=limit):
         try:

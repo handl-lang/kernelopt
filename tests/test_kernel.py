@@ -1353,7 +1353,7 @@ class TestBoard:
 
     def test_verify_law_referee(self):
         """The injected gauntlet derives the scheduled extraction."""
-        from mlopt_discovery.verifier import verify_law
+        from kit_discovery.verifier import verify_law
 
         b = KernelBoard(_silu_term(), verifier=verify_law)
         b.observe()
@@ -1378,7 +1378,7 @@ class TestPlayDomain:
 
         mlopt_kernel.play.register()
         from gamekit import engine
-        from mlopt_discovery import play
+        from kit_discovery import play
 
         d = play.DOMAINS["kernel"]
         case = d.cases(0, 4)[0]
@@ -1392,7 +1392,7 @@ class TestPlayDomain:
         mlopt_kernel.play.register()
         from gamekit import engine
         from gamekit.players import registry
-        from mlopt_discovery import play
+        from kit_discovery import play
 
         mk = registry.make("linear", "kernel", seed=0, ctx={})
         d = play.DOMAINS["kernel"]
@@ -1408,7 +1408,7 @@ class TestPlayDomain:
         mlopt_kernel.play.register()
         from gamekit import engine
         from gamekit.players import registry
-        from mlopt_discovery import play
+        from kit_discovery import play
 
         mk = registry.make("playbook", "kernel", seed=0, ctx={})
         d = play.DOMAINS["kernel"]
@@ -1423,7 +1423,7 @@ class TestPlayDomain:
 
         mlopt_kernel.play.register()
         from gamekit import engine
-        from mlopt_discovery import play
+        from kit_discovery import play
 
         d = play.DOMAINS["kernel"]
         case = d.cases(0, 8)[0]
@@ -1437,7 +1437,7 @@ class TestPlayDomain:
     ):
         """A failed verify verdict never reads as a delivered artifact."""
         from gamekit import engine
-        from mlopt_discovery import play
+        from kit_discovery import play
 
         import mlopt_kernel
         import mlopt_kernel.play

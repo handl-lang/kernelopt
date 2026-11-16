@@ -36,18 +36,18 @@ import argparse
 import itertools
 import json
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
+from kit_discovery import oracle
+from kit_discovery.verifier import verify_law
 from mlopt_core.ir import Const, TensorType, Var
 from mlopt_core.meta import instantiate_pattern
-from mlopt_discovery import oracle
-from mlopt_discovery.verifier import verify_law
-
-from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES
 
 from bench.drivers.screen.novelty_sieve import kernel_truth
+from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES
 
 __all__ = [
     "CASES",

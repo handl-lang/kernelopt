@@ -9,7 +9,7 @@ language), a :class:`~mlopt_kernel.sink.KernelSink` implementing the
 :func:`~mlopt_kernel.cost.kernel_cost`, and
 :class:`~mlopt_kernel.board.KernelBoard` — the
 ``gamekit.engine.Board``-shaped episode the ``kernel`` domain in
-``mlopt_discovery.play`` boards cases on.
+``kit_discovery.play`` boards cases on.
 """
 
 from mlopt_kernel.board import KernelBoard, KernelReport, KernelState

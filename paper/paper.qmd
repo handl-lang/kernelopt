@@ -239,7 +239,7 @@ cheapness:
 1. **Derivation.**  The terminal extraction must certify: either the
    in-graph certificate replay (`EGraph.certificate` +
    `verify_certificate` — no discovery dependency) or, under the
-   `kernel` play domain, `mlopt_discovery.verifier.verify_law`
+   `kernel` play domain, `kit_discovery.verifier.verify_law`
    deriving the scheduled candidate against the spelled source under
    the bank.
 2. **Numeric verify — verify-first.**  `KernelSink.verify` runs the

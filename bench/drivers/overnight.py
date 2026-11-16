@@ -87,6 +87,8 @@ from typing import Any
 from benchkit.checkpoint import Checkpoint, new_manifest
 from gamekit import engine
 from gamekit.players import registry as players
+from kit_discovery import open_game as og
+from kit_discovery.verifier import verify_law
 from mlopt_core import meta as meta_mod
 from mlopt_core.egraph import EGraph, verify_certificate
 from mlopt_core.egraph.terms import _term_instantiate, _term_match
@@ -104,8 +106,6 @@ from mlopt_core.meta import (
     apply_rewrite_at,
     match_pattern,
 )
-from mlopt_discovery import open_game as og
-from mlopt_discovery.verifier import verify_law
 
 from mlopt_kernel import KERNEL_RULES, KernelSink, kernel_cost
 
@@ -382,8 +382,8 @@ def _corpus_proposals() -> list:
     """
     global _CORPUS_PROPOSALS
     if _CORPUS_PROPOSALS is None:
-        from mlopt_discovery import pipeline as pipe
-        from mlopt_discovery.census import CorpusTerm, op_tuple_census
+        from kit_discovery import pipeline as pipe
+        from kit_discovery.census import CorpusTerm, op_tuple_census
 
         rows = _registry()
         cts = [CorpusTerm("kernel", n, t) for n, _c, t, _f in rows]
@@ -437,7 +437,7 @@ def _mint_composites(
     them), ending at the fixpoint or *compose* strata.  Pool room is
     whatever the census mint left under ``page``.
     """
-    from mlopt_discovery.proposal import Candidate
+    from kit_discovery.proposal import Candidate
 
     page = case.get("page", DEFAULTS["page"])
     bank = [*KERNEL_RULES, *_guarded_parents(term)]
@@ -518,7 +518,7 @@ class _KernelArena(og.OpenArena):
     def __init__(
         self, case: dict, *, fuel: int = _COMPOSE_FUEL
     ) -> None:
-        from mlopt_discovery.proposal import Candidate
+        from kit_discovery.proposal import Candidate
 
         self.pool: list = []
         self.meta: dict[int, dict] = {}
@@ -622,7 +622,7 @@ class _KernelArena(og.OpenArena):
 # ---------------------------------------------------------------------------
 #
 #  The ``--corpus kernel-prim`` mint: the shared
-#  ``mlopt_discovery.prim_mint.prim_pool`` machinery (promoted out of
+#  ``kit_discovery.prim_mint.prim_pool`` machinery (promoted out of
 #  the parent's ``zoo-prim`` driver — one implementation, both
 #  domain repos wire their own hooks) anti-unifies recurring manual
 #  subgraphs out of the whole 46-case registry merged into one
@@ -648,11 +648,11 @@ def _prim_knobs(prim: dict | None = None) -> dict:
     e-graph first, registering their denotations on the kernel table,
     so mined shapes compose over machine-minted primitives),
     ``family_mint``, ``depth`` and ``vocab`` — the semantics live in
-    :func:`mlopt_discovery.prim_mint.prim_pool`.  The resolved dict
+    :func:`kit_discovery.prim_mint.prim_pool`.  The resolved dict
     is protocol-pinned (``protocol["prim"]``) and rides the case
     record, so a resume's pool rebuild replays the identical hunt.
     """
-    from mlopt_discovery import prim_mint as _pm
+    from kit_discovery import prim_mint as _pm
 
     out = {
         "min_ops": _pm.PRIM_MIN_OPS,
@@ -685,8 +685,8 @@ def _denoted_shapes() -> frozenset:
     already named — minting ``ksynop_*`` for it would be a second
     name, so the mint skips it and the funnel records the exclusion.
     """
+    from kit_discovery import prim_mint as _pm
     from mlopt_core.laws.priorart import PRIOR_ART_RULES
-    from mlopt_discovery import prim_mint as _pm
 
     from bench.drivers.screen import novelty_sieve as ns
     from mlopt_kernel.sink import kernel_ops
@@ -718,8 +718,8 @@ def _register_shipped() -> None:
     enodes lower through ``KernelSink`` exactly like the minted
     ``ksynop_*`` ops do.
     """
+    from kit_discovery import prim_mint as _pm
     from mlopt_core.laws import minted
-    from mlopt_discovery import prim_mint as _pm
 
     from mlopt_kernel.sink import _table
 
@@ -747,7 +747,7 @@ def _prim_pool(
 ) -> tuple:
     """The kernel prim-mint pool — the codegen-domain hook wiring.
 
-    :func:`mlopt_discovery.prim_mint.prim_pool` under kernel hooks:
+    :func:`kit_discovery.prim_mint.prim_pool` under kernel hooks:
     the sink's binding table (the ``ksynop_*`` denotations register
     onto it, so every ``KernelSink``/``KernelExecutor`` seated on
     the shared dict lowers them), :func:`_prim_eval` as the emit
@@ -755,7 +755,7 @@ def _prim_pool(
     (:func:`_denoted_shapes`), the ``ksynop`` prefix, and
     :func:`_register_shipped` as the bootstrap's denotation seater.
     """
-    from mlopt_discovery import prim_mint as _pm
+    from kit_discovery import prim_mint as _pm
 
     from mlopt_kernel.sink import _table
 
@@ -1313,7 +1313,7 @@ def _admit(
     (``evidence._guard_transport_spec``) when the mint transported
     parent hooks.
     """
-    from mlopt_discovery.evidence import _guard_transport_spec
+    from kit_discovery.evidence import _guard_transport_spec
 
     law = law_to_data(rule)
     guard = _guard_transport_spec(rule)

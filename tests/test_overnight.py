@@ -41,7 +41,7 @@ torch = pytest.importorskip("torch")
 from mlopt_core.ir import Const, Op
 from mlopt_core.laws import R
 from mlopt_core.laws.serialize import alpha_key
-from mlopt_discovery.proposal import Candidate
+from kit_discovery.proposal import Candidate
 
 from bench.drivers import overnight as on
 from bench.drivers.screen import novelty_sieve as ns
@@ -310,12 +310,12 @@ class TestRun:
     def _arm(self):
         def go(state):
             for j in state.pending:
-                from mlopt_discovery.meta_arena import Action
+                from kit_discovery.meta_arena import Action
 
                 return Action(
                     "evaluate", {"i": j, "cand": state.pool[j]}
                 )
-            from mlopt_discovery.meta_arena import Action
+            from kit_discovery.meta_arena import Action
 
             return Action("stop", {})
 

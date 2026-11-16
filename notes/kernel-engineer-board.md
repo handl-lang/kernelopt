@@ -434,7 +434,7 @@ can play kernel engineering — a second domain, not a second system.
 
 ## What transfers directly
 
-- `Board` protocol + domain registry (`python -m mlopt_discovery.play
+- `Board` protocol + domain registry (`python -m kit_discovery.play
   --domain …`) — a kernel domain registers like `meta|open|contraction`
 - players package (`random/playbook/linear/neural/distilled`) +
   leaderboard runner (`bench/players`)

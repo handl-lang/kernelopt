@@ -43,7 +43,7 @@ GAMMA = 0.9
 
 
 class _ChunkedRetention(nn.Module):
-    """Verbatim copy of ``mlopt_discovery.zoo._ChunkedRetention``."""
+    """Verbatim copy of ``kit_discovery.zoo._ChunkedRetention``."""
 
     def __init__(self, d: int) -> None:
         super().__init__()

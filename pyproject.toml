@@ -10,7 +10,11 @@ license = "MIT OR Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "mlopt-core",
-    "mlopt-discovery",
+    # kit-discovery's runtime dep closure reaches mlopt-torch; declare
+    # it directly so the [tool.uv.sources] git pin applies (uv does
+    # not always propagate sources to transitive-only requirements).
+    "mlopt-torch",
+    "kit-discovery",
     "gamekit",
     "benchkit",
     "lib-kernel-ir",
@@ -52,10 +56,10 @@ mlopt-dtypes = { git = "https://github.com/handl-lang/eqsat.git", subdirectory =
 mlopt-torch = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-torch", tag = "v0.1.16" }
 mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", tag = "v0.1.9" }
 kit-carriers = { git = "https://github.com/handl-lang/kit-carriers.git", tag = "v0.1.1" }
-gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.10" }
-benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.10" }
-mlopt-discovery = { git = "https://github.com/handl-lang/graphopt.git", subdirectory = "packages/mlopt-discovery", tag = "v0.1.16" }
-discoverykit = { git = "https://github.com/handl-lang/discoverykit.git", subdirectory = "packages/discoverykit", tag = "v0.1.14" }
+gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.11" }
+benchkit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/benchkit", tag = "v0.1.11" }
+kit-discovery = { git = "https://github.com/handl-lang/kit-discovery.git", tag = "v0.1.0" }
+discoverykit = { git = "https://github.com/handl-lang/discoverykit.git", subdirectory = "packages/discoverykit", tag = "v0.1.17" }
 lib-kernel-ir = { git = "https://github.com/handl-lang/lib-kernel-ir.git", tag = "v0.1.1" }
 
 [tool.pytest.ini_options]

@@ -12,7 +12,7 @@ episode ends at the horizon or when patience runs out.
 The referee — *the existing gauntlet* — fires on the terminal
 extraction: the spelled source and the candidate the search picked
 must derive as equal.  Two referees plug in through the
-``verifier`` seam: ``mlopt_discovery.verifier.verify_law`` (the
+``verifier`` seam: ``kit_discovery.verifier.verify_law`` (the
 domain layer injects it — a fresh-graph law check), or the default
 in-graph certificate replay (``EGraph.certificate`` +
 ``verify_certificate`` — the same proof machinery, no discovery
@@ -23,7 +23,7 @@ implements ``observe``/``step`` and a ``KernelReport`` carrying the
 ``reward``/``terminal``/``cost``/``certificate_ok`` fields the
 episode driver reads, without importing the game layer (the
 ``kernelopt`` package stays substrate-side — the game layer is a
-sibling repo consumed through ``mlopt_discovery``/``gamekit``).
+sibling repo consumed through ``kit_discovery``/``gamekit``).
 """
 
 from __future__ import annotations
@@ -157,7 +157,7 @@ class KernelBoard:
         The referee, ``(src, dst, rules) -> result`` with a
         ``derivable`` member.  ``None`` selects the in-graph
         certificate replay; the ``kernel`` play domain injects
-        ``mlopt_discovery.verifier.verify_law``.
+        ``kit_discovery.verifier.verify_law``.
     step_cost
         The per-move evaluation charge — trying a codegen law is a
         compile/measure call, so each fired rule costs *step_cost*

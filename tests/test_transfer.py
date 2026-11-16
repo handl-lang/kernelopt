@@ -7,7 +7,7 @@ on the cheap boards and keeps ``open`` to the pure-function arms.
 
 from __future__ import annotations
 
-from mlopt_discovery import play
+from kit_discovery import play
 
 import mlopt_kernel.play
 from bench.drivers.policy import transfer

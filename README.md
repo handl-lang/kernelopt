@@ -30,7 +30,7 @@ Contents:
   - `search.py` — the ADR-0165 kernel-IR term search (gate → bound →
     measure; `lib-kernel-ir` `Term`s in, routed `Candidate`s out),
   - `play.py` — the **`kernel` domain plugin**: `register()` seats
-    the domain into `mlopt_discovery.play.DOMAINS` and its players
+    the domain into `kit_discovery.play.DOMAINS` and its players
     into the gamekit registry (importing the module mutates nothing;
     `main()` registers itself) — run
     `python -m mlopt_kernel.play --domain kernel --deliver`.
@@ -62,7 +62,7 @@ see `[tool.uv.sources]` in `pyproject.toml`:
 | `mlopt-orchestrator` | `handl-lang/eqsat` | `packages/mlopt-orchestrator` |
 | `mlopt-torch` | `handl-lang/graphopt` | `packages/mlopt-torch` |
 | `kit-carriers` | `handl-lang/graphopt` | `packages/kit-carriers` |
-| `mlopt-discovery` | `handl-lang/graphopt` | `packages/mlopt-discovery` |
+| `kit-discovery` | `handl-lang/graphopt` | `packages/kit-discovery` |
 | `gamekit` | `handl-lang/gamekit` | `packages/gamekit` |
 | `benchkit` | `handl-lang/gamekit` | `packages/benchkit` |
 | `lib-kernel-ir` | `handl-lang/lib-kernel-ir` | repo root, tag `v0.1.0` |

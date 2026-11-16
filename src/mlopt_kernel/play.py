@@ -4,7 +4,7 @@
 The kernelopt board (plan 0032 phases 3–4): candidates are
 codegen-law applications — named fused-kernel ops and strength
 reductions from :data:`mlopt_kernel.laws.KERNEL_RULES` — the referee
-is the gauntlet (``mlopt_discovery.verifier.verify_law`` derives the
+is the gauntlet (``kit_discovery.verifier.verify_law`` derives the
 scheduled candidate against the spelled source), and the score is
 :func:`mlopt_kernel.cost.kernel_cost` improvement.  Cases are spelled
 programs carrying live fusion/strength-reduction sites plus honest
@@ -14,8 +14,8 @@ verify-first.  The design note is
 ``notes/kernel-engineer-board.md`` in this repo.
 
 This module is the *plugin*: :func:`register` seats the domain into
-:mod:`mlopt_discovery.play`'s ``DOMAINS`` (through the public
-:func:`mlopt_discovery.play.spec_domain` seam) and the kernel
+:mod:`kit_discovery.play`'s ``DOMAINS`` (through the public
+:func:`kit_discovery.play.spec_domain` seam) and the kernel
 board's players into the gamekit registry (through
 :func:`gamekit.players.registry.register_player`).  Registration is
 explicit — importing this module mutates nothing; ``main`` calls
@@ -27,7 +27,7 @@ Run the game::
         --train-cases 40 --eval-cases 10 --budget 8
     python -m mlopt_kernel.play --domain kernel --deliver
 
-Every ``mlopt_discovery.play`` flag works — ``--player <name>``
+Every ``kit_discovery.play`` flag works — ``--player <name>``
 resolves the registered seats (``linear``/``linear-greedy``/
 ``linear-cold``/``random``/``playbook`` all play ``kernel``).
 """
@@ -49,8 +49,8 @@ from gamekit.players import (
     register_part,
 )
 from gamekit.players.registry import PlayerSpec, register_player
+from kit_discovery.play import DOMAINS, spec_domain
 from mlopt_core.ir import Const, Op, TensorType, Var
-from mlopt_discovery.play import DOMAINS, spec_domain
 
 from mlopt_kernel.weights import KERNEL_PLAYER_WEIGHTS
 
@@ -560,9 +560,9 @@ def register() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Delegate to ``mlopt_discovery.play.main`` — the domain is seated."""
+    """Delegate to ``kit_discovery.play.main`` — the domain is seated."""
     register()
-    from mlopt_discovery.play import main as _main
+    from kit_discovery.play import main as _main
 
     return _main(argv)
 

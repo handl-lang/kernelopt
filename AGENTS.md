@@ -23,7 +23,7 @@ MIT OR Apache-2.0.
   `lib-kernel-ir` `Term`s — gate → bound → measure), `play` (the
   domain plugin).
 - `mlopt_kernel.play` is the seam: `play.register()` seats `kernel`
-  into `mlopt_discovery.play.DOMAINS` (`play.spec_domain`) and seats
+  into `kit_discovery.play.DOMAINS` (`play.spec_domain`) and seats
   `linear`/`linear-greedy`/`linear-cold`/`random`/`playbook` on the
   kernel board (`gamekit.players.registry.register_player` — the
   spec-driven factories need no `make`; `playbook` supplies its own
@@ -55,7 +55,7 @@ per-package subdirectories: `mlopt-core` and
 `mlopt-orchestrator` (`handl-lang/eqsat`), `mlopt-torch`,
 `kit-carriers` (the `probes` dep-group only — the vocab probe
 lifts the retnet carrier through `kit_carriers.om`),
-`mlopt-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`
+`kit-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`
 (`handl-lang/gamekit` `packages/`), and `lib-kernel-ir`
 (`handl-lang/lib-kernel-ir` — `mlopt_kernel.search` reads its
 `Term`/`Cost` IR; tests put `../lib-kernel-ir/src` on `pythonpath`

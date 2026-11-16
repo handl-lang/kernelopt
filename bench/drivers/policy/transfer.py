@@ -55,7 +55,7 @@ from typing import Any
 
 from gamekit import engine
 from gamekit.players import DomainSpec, LearnedPlayer
-from mlopt_discovery import lawdata, play
+from kit_discovery import lawdata, play
 
 import mlopt_kernel.play
 from mlopt_kernel.weights import KERNEL_PLAYER_WEIGHTS
