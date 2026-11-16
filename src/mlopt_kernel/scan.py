@@ -4,7 +4,7 @@ The ``om_chunk_scan`` op's two halves, vendored carrier-free (the
 kernel package's standing posture — ``_decay``/``_decay_vec``/
 ``_om_decayed`` in the sink are the same port): the term analysis
 and the pairwise-batched forward of the parent's
-``ChunkedDecayModule`` (``mlopt_carriers.decayed_lower``), restated
+``ChunkedDecayModule`` (``kit_carriers.decayed_lower``), restated
 over the kernel executor's ``ev(t)`` operand channel instead of an
 embedded ``IRModule``.
 

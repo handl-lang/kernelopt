@@ -20,7 +20,7 @@ This probe measures the new ladder:
    carrier+graph / scheduled scan / scan+graph — honest rows against
    the 0.537 ms carrier arm and the ~0.28 ms FLA reference.
 
-Run (needs the *parent* env — ``mlopt_carriers`` is deliberately not a
+Run (needs the *parent* env — ``kit_carriers`` is deliberately not a
 kernelopt dep)::
 
     PYTHONPATH=/path/to/kernelopt/src \

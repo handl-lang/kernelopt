@@ -23,7 +23,7 @@ fused chunk-scan.  Whether a manual CUDA-graph capture or a
 whole-graph ``torch.compile`` of the executor recovers the
 schedule is measured, not asserted.
 
-Run (needs the *parent* env — ``mlopt_carriers``/``mlopt_cuda`` are
+Run (needs the *parent* env — ``kit_carriers``/``mlopt_cuda`` are
 deliberately not kernelopt deps)::
 
     PYTHONPATH=/path/to/kernelopt/src \
@@ -69,7 +69,7 @@ class _ChunkedRetention(nn.Module):
 
 def _saturate(t: int, k: int, iters: int, budget: int, chunk: int):
     """``wholemodel_gap_probe._saturate``, vendored verbatim."""
-    from mlopt_carriers.om import OM_CHUNKIFY, OM_LAWS, om_kway_laws
+    from kit_carriers.om import OM_CHUNKIFY, OM_LAWS, om_kway_laws
     from mlopt_core.cost import dag_cost, flops_cost
     from mlopt_core.egraph import EGraph
     from mlopt_core.laws.tensor import (

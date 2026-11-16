@@ -53,8 +53,8 @@ Every entry in `[tool.uv.sources]` (`pyproject.toml`) — git deps
 pinned to the `v0.1.0` tags on the split sibling repos'
 per-package subdirectories: `mlopt-core` and
 `mlopt-orchestrator` (`handl-lang/eqsat`), `mlopt-torch`,
-`mlopt-carriers` (the `probes` dep-group only — the vocab probe
-lifts the retnet carrier through `mlopt_carriers.om`),
+`kit-carriers` (the `probes` dep-group only — the vocab probe
+lifts the retnet carrier through `kit_carriers.om`),
 `mlopt-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`
 (`handl-lang/gamekit` `packages/`), and `lib-kernel-ir`
 (`handl-lang/lib-kernel-ir` — `mlopt_kernel.search` reads its
