@@ -189,7 +189,7 @@ dependencies = [
 [[package]]
 name = "kit-torch"
 version = "0.1.0"
-source = { git = "https://github.com/handl-lang/kit-torch.git?tag=v0.1.6#a7e2fbc494b7f98c96b7d7405cc9f423c67b7263" }
+source = { git = "https://github.com/handl-lang/kit-torch.git?tag=v0.1.7#5a91031ae9638b76622209a7339bb70f572a7267" }
 dependencies = [
     { name = "mlopt-core" },
     { name = "mlopt-dtypes" },
@@ -379,7 +379,7 @@ requires-dist = [
     { name = "benchkit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fbenchkit&tag=v0.1.15" },
     { name = "gamekit", git = "https://github.com/handl-lang/gamekit.git?subdirectory=packages%2Fgamekit&tag=v0.1.15" },
     { name = "kit-discovery", git = "https://github.com/handl-lang/kit-discovery.git?tag=v0.1.5" },
-    { name = "kit-torch", git = "https://github.com/handl-lang/kit-torch.git?tag=v0.1.6" },
+    { name = "kit-torch", git = "https://github.com/handl-lang/kit-torch.git?tag=v0.1.7" },
     { name = "lib-kernel-ir", git = "https://github.com/handl-lang/lib-kernel-ir.git?tag=v0.1.1" },
     { name = "mlopt-core", git = "https://github.com/handl-lang/eqsat.git?subdirectory=packages%2Fmlopt-core&tag=v0.1.13" },
     { name = "torch", specifier = ">=2.0" },

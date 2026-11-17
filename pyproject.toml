@@ -53,7 +53,7 @@ where = ["src"]
 [tool.uv.sources]
 mlopt-core = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-core", tag = "v0.1.13" }
 mlopt-dtypes = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-dtypes", tag = "v0.1.13" }
-kit-torch = { git = "https://github.com/handl-lang/kit-torch.git", tag = "v0.1.6" }
+kit-torch = { git = "https://github.com/handl-lang/kit-torch.git", tag = "v0.1.7" }
 mlopt-orchestrator = { git = "https://github.com/handl-lang/eqsat.git", subdirectory = "packages/mlopt-orchestrator", tag = "v0.1.13" }
 kit-carriers = { git = "https://github.com/handl-lang/kit-carriers.git", tag = "v0.1.7" }
 gamekit = { git = "https://github.com/handl-lang/gamekit.git", subdirectory = "packages/gamekit", tag = "v0.1.15" }
