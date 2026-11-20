@@ -5,8 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mlopt-kernel"
 version = "0.1.0dev"
-description = "kernelopt: the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain.  Split out of handl-lang/graphopt (plan 0032 phase 4)."
+description = "kernelopt: the codegen domain for the mlopt game layer — codegen law bank, KernelSink, kernel board, and the ``kernel`` play domain."
 license = "MIT OR Apache-2.0"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "mlopt-core",

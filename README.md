@@ -1,15 +1,11 @@
 # kernelopt
 
-The codegen domain for the mlopt game layer, split out of
-[`handl-lang/graphopt`](https://github.com/handl-lang/graphopt)
-(plan 0032 phase 4).  It seats a `kernel` board into the same
-game/eqsat machinery that plays law discovery: the moves are
-codegen laws (fused-kernel ops + strength reductions), the referee
-verifies numerically *and* on measured wall time.
+The codegen domain for the mlopt game layer.  It seats a `kernel`
+board into the same game/eqsat machinery that plays law discovery:
+the moves are codegen laws (fused-kernel ops + strength reductions),
+the referee verifies numerically *and* on measured wall time.
 
-Dual-licensed MIT OR Apache-2.0 — see `LICENSE-MIT` / `LICENSE-APACHE`.
-
-Contents:
+## Packages
 
 - `src/mlopt_kernel/` — the domain package:
   - `laws.py` — the codegen law bank (`KERNEL_RULES`: 28 named
@@ -27,7 +23,7 @@ Contents:
   - `scan.py` — the `om_chunk_scan` schedule: `build_scan_plan` /
     `is_chunk_scan` term analysis + `ScanRunner`, the pairwise-batched
     forward the `kern_fuse_chunk_scan*` laws lower to,
-  - `search.py` — the ADR-0165 kernel-IR term search (gate → bound →
+  - `search.py` — the kernel-IR term search (gate → bound →
     measure; `lib-kernel-ir` `Term`s in, routed `Candidate`s out),
   - `play.py` — the **`kernel` domain plugin**: `register()` seats
     the domain into `kit_discovery.play.DOMAINS` and its players
@@ -50,7 +46,7 @@ Contents:
   `notes/kernel-engineer-board.md` — the design note + measurement
   ledger; `paper/` — the working draft (proposed, not accepted).
 
-## Wiring
+## Develop
 
 The substrate is consumed as **git deps on per-package
 subdirectories** of the sibling repos, pinned to the `v0.1.0` tags —
@@ -75,11 +71,18 @@ search test skips honestly when `lib_kernel_ir` is absent.  The
 rest — the law bank, sink, board, play domain — needs only the git
 deps above.
 
+```sh
+uv sync                                  # resolves the git deps
+```
+
 ## Verify
 
 ```sh
-uv sync                                  # resolves the git deps
-.venv/bin/python -m pytest tests/ -q     # the kernel suite
+uv run scripts/gate.py                   # pytest → ruff → ty → lint-imports
 .venv/bin/python -m mlopt_kernel.play --domain kernel \
-    --train-cases 8 --eval-cases 4 --budget 8
+    --train-cases 8 --eval-cases 4 --budget 8   # CLI smoke
 ```
+
+## License
+
+MIT OR Apache-2.0 — see `LICENSE-MIT` / `LICENSE-APACHE`.
