@@ -1,8 +1,7 @@
 # Agent guide — kernelopt
 
 The codegen domain for the mlopt game layer, split out of
-`handl-lang/graphopt` (plan 0032 phase 4).  Dual-licensed
-MIT OR Apache-2.0.
+`handl-lang/graphopt` (plan 0032 phase 4).  Licensed MIT.
 
 ## Layout
 

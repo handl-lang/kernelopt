@@ -85,4 +85,4 @@ uv run scripts/gate.py                   # pytest → ruff → ty → lint-impor
 
 ## License
 
-MIT OR Apache-2.0 — see `LICENSE-MIT` / `LICENSE-APACHE`.
+MIT.
