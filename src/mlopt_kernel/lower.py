@@ -42,6 +42,7 @@ Honest bounds, stated up front:
 from __future__ import annotations
 
 import base64
+import json
 import os
 import shutil
 import subprocess
@@ -53,9 +54,15 @@ import blake3
 from lib_kernel_ir import Term, to_json
 
 __all__ = [
+    "BLOB_DIRNAME",
     "GENERATOR_NAME",
     "GENERATOR_VERSION",
+    "HASH_ALGORITHM",
+    "MANIFEST_FILENAME",
+    "MANIFEST_VERSION",
     "LowerError",
+    "deliver_candidate",
+    "deliver_term",
     "lower_candidate",
     "lower_term",
     "verify_lowered",
@@ -66,6 +73,15 @@ Target = Literal["triton", "cuda"]
 #: Provenance stamped into every manifest this module emits.
 GENERATOR_NAME = "mlopt-kernel-lower"
 GENERATOR_VERSION = "0.1.0dev"
+
+#: Change-set manifest wire constants — identical to
+#: ``mlopt.manifest`` (mlopt-product) and the ``kit_mlopt::manifest``
+#: apply shim in kit-prelude: ``manifest.json`` + a content-addressed
+#: ``blobs/<hash>`` store, ``hash_algorithm`` stamped per manifest.
+MANIFEST_VERSION = 1
+HASH_ALGORITHM = "blake3-256"
+BLOB_DIRNAME = "blobs"
+MANIFEST_FILENAME = "manifest.json"
 
 #: kernelopt repo root — ``src/mlopt_kernel/lower.py`` → parents[2].
 _KERNELOPT_ROOT = Path(__file__).resolve().parents[2]
@@ -284,6 +300,7 @@ def lower_term(
     change = {
         "op": "put",
         "artifact": artifact,
+        "before_hash": None,
         "content_b64": base64.b64encode(content).decode(),
         "hash": _blake3_hex(content),
     }
@@ -330,9 +347,11 @@ def lower_candidate(
     changes = lower_term(term, target, out_dir=out_dir, bin_dir=bin_dir)
     term_json = to_json(term)
     return {
+        "v": MANIFEST_VERSION,
+        "hash_algorithm": HASH_ALGORITHM,
         "target": target,
         "generator": GENERATOR_NAME,
-        "generator_version": GENERATOR_VERSION,
+        "generator_version": (f"{GENERATOR_NAME}/{GENERATOR_VERSION}"),
         "run_id": run_id or uuid.uuid4().hex,
         "source_hashes": {"term": _blake3_hex(term_json.encode())},
         "changes": changes,
@@ -394,3 +413,175 @@ def verify_lowered(term: Term, env: dict[str, Any]) -> Any:
             f"{type(term).__name__}"
         )
     return term.denote(env)
+
+
+# ---------------------------------------------------------------------------
+#  deliver — the manifest-dir writer (apply-shim consumable)
+# ---------------------------------------------------------------------------
+#
+# ``lower_candidate`` returns the manifest *record* (inline
+# ``content_b64`` changes — self-contained JSON). ``deliver_*`` writes
+# the on-disk form the apply shim consumes: ``<dir>/manifest.json`` +
+# ``<dir>/blobs/<blake3-hex>`` payloads, changes carrying ``blob_ref``
+# — the same wire ``mlopt.manifest.write_manifest`` (mlopt-product)
+# and ``kit_mlopt::manifest::apply_manifest`` (kit-prelude) speak.
+# Hash algorithm is BLAKE3-256, identical to the kernel's
+# ``ContentHash::of`` — declared hashes compare directly against what
+# ``Engine::apply`` verifies post-write.
+
+
+def _blob_ref(change: dict[str, Any]) -> str:
+    """Store-relative blob ref for a put change (``blobs/<hash>``)."""
+    return f"{BLOB_DIRNAME}/{change['hash']}"
+
+
+def _write_blob(manifest_dir: Path, change: dict[str, Any]) -> None:
+    """Write one put change's payload to ``blobs/<hash>`` (atomic)."""
+    content = base64.b64decode(change["content_b64"])
+    actual = _blake3_hex(content)
+    if actual != change["hash"]:
+        raise LowerError(
+            f"deliver: change {change['artifact']!r} hash "
+            f"{change['hash']} != content hash {actual}"
+        )
+    blobs = manifest_dir / BLOB_DIRNAME
+    blobs.mkdir(parents=True, exist_ok=True)
+    path = blobs / actual
+    if not path.exists():
+        tmp = path.with_name(f".{actual}.{os.getpid()}.tmp")
+        tmp.write_bytes(content)
+        os.replace(tmp, path)
+
+
+def _deliver_manifest(
+    manifest: dict[str, Any],
+    manifest_dir: str | Path,
+    *,
+    run_id: str | None,
+) -> Path:
+    """Write ``manifest.json`` + blobs; return the manifest path.
+
+    ``manifest`` is the dict :func:`lower_candidate` returns.  The
+    written doc keeps every record field and rewrites ``changes`` to
+    the blob-store wire form (``blob_ref`` instead of ``content_b64``)
+    — payloads land in ``<dir>/blobs/<hash>``.
+    """
+    out = Path(manifest_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    changes = list(manifest.get("changes") or [])
+    for ch in changes:
+        if ch.get("op") == "put":
+            _write_blob(out, ch)
+
+    wire_changes: list[dict[str, Any]] = []
+    artifacts: list[dict[str, str]] = []
+    for ch in changes:
+        if ch.get("op") == "delete":
+            wire_changes.append(
+                {"op": "delete", "artifact": ch["artifact"]}
+            )
+            continue
+        wire_changes.append(
+            {
+                "op": "put",
+                "artifact": ch["artifact"],
+                "before_hash": ch.get("before_hash"),
+                "blob_ref": _blob_ref(ch),
+                "hash": ch["hash"],
+            }
+        )
+        artifacts.append(
+            {"artifact": ch["artifact"], "hash": ch["hash"]}
+        )
+    artifacts.sort(key=lambda e: e["artifact"])
+
+    doc = {
+        "v": MANIFEST_VERSION,
+        "hash_algorithm": HASH_ALGORITHM,
+        "target": manifest["target"],
+        "generator": GENERATOR_NAME,
+        "generator_version": manifest.get(
+            "generator_version",
+            f"{GENERATOR_NAME}/{GENERATOR_VERSION}",
+        ),
+        "run_id": run_id or manifest.get("run_id") or uuid.uuid4().hex,
+        "source_hashes": dict(manifest.get("source_hashes") or {}),
+        "artifacts": artifacts,
+        "changes": wire_changes,
+        "verify": manifest.get("verify") or verify_manifest_block(),
+        "manifest_dir": str(out),
+    }
+    path = out / MANIFEST_FILENAME
+    tmp = path.with_name(f".{MANIFEST_FILENAME}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    return path
+
+
+def deliver_term(
+    term: Term,
+    target: Target,
+    manifest_dir: str | Path,
+    *,
+    out_dir: str | Path | None = None,
+    bin_dir: str | Path | None = None,
+    run_id: str | None = None,
+) -> Path:
+    """Lower ``term`` and write the apply-shim consumable manifest dir.
+
+    Returns the path to ``<manifest_dir>/manifest.json``.  The dir
+    holds ``blobs/<blake3-hex>`` payloads plus the manifest whose
+    ``changes`` carry ``blob_ref`` — the exact wire
+    ``kit_mlopt::manifest::apply_manifest`` reads
+    (``hash_algorithm: "blake3-256"``, kernel ``ContentHash``
+    digests).  ``out_dir``, when given, additionally writes each
+    artifact beside the manifest for inspection (the manifest stays
+    the source of truth).
+
+    Raises :class:`LowerError` on any refusal — never falls back.
+    """
+    if not isinstance(term, Term):
+        raise LowerError(
+            f"deliver_term needs a lib_kernel_ir.Term, got "
+            f"{type(term).__name__}"
+        )
+    changes = lower_term(term, target, out_dir=out_dir, bin_dir=bin_dir)
+    term_json = to_json(term)
+    manifest = {
+        "target": target,
+        "generator": GENERATOR_NAME,
+        "generator_version": f"{GENERATOR_NAME}/{GENERATOR_VERSION}",
+        "run_id": run_id or uuid.uuid4().hex,
+        "source_hashes": {"term": _blake3_hex(term_json.encode())},
+        "changes": changes,
+        "verify": verify_manifest_block(),
+    }
+    return _deliver_manifest(manifest, manifest_dir, run_id=run_id)
+
+
+def deliver_candidate(
+    candidate: Any,
+    target: Target,
+    manifest_dir: str | Path,
+    *,
+    out_dir: str | Path | None = None,
+    bin_dir: str | Path | None = None,
+    run_id: str | None = None,
+) -> Path:
+    """Lower a searched candidate's term and deliver the manifest dir.
+
+    Same candidate handling as :func:`lower_candidate` (``.term`` or
+    the candidate itself; must be a real ``lib_kernel_ir.Term``), then
+    the :func:`deliver_term` write.  Returns the ``manifest.json``
+    path — feed it to ``hnl codegen apply --manifest`` / the
+    ``kit_mlopt`` apply shim when that lands.
+    """
+    term = getattr(candidate, "term", candidate)
+    return deliver_term(
+        term,
+        target,
+        manifest_dir,
+        out_dir=out_dir,
+        bin_dir=bin_dir,
+        run_id=run_id,
+    )

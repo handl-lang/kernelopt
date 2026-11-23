@@ -241,3 +241,115 @@ def test_lower_term_real_emitter_refusal() -> None:
     )
     with pytest.raises(LowerError, match="not a lowerable term"):
         lower_term(bad, "triton")
+
+
+# ---------------------------------------------------------------------------
+#  deliver_* — the apply-shim consumable manifest dir (T-094 wire parity)
+# ---------------------------------------------------------------------------
+
+
+def test_lower_candidate_manifest_wire_fields(stub_bins) -> None:
+    """The record dict carries the manifest.json wire envelope."""
+    cand = SimpleNamespace(term=QGEMV_TERM, label="qgemv-2")
+    manifest = lower_candidate(cand, "triton", bin_dir=stub_bins)
+    assert manifest["v"] == 1
+    assert manifest["hash_algorithm"] == "blake3-256"
+    assert manifest["generator"] == "mlopt-kernel-lower"
+    assert manifest["generator_version"] == (
+        "mlopt-kernel-lower/0.1.0dev"
+    )
+    assert manifest["changes"][0]["before_hash"] is None
+
+
+def test_deliver_term_writes_manifest_dir(stub_bins, tmp_path) -> None:
+    import json as _json
+
+    from mlopt_kernel.lower import (
+        BLOB_DIRNAME,
+        HASH_ALGORITHM,
+        MANIFEST_FILENAME,
+        MANIFEST_VERSION,
+        deliver_term,
+    )
+
+    mdir = tmp_path / "deliver"
+    path = deliver_term(QGEMV_TERM, "triton", mdir, bin_dir=stub_bins)
+    assert path == mdir / MANIFEST_FILENAME
+    assert path.is_file()
+
+    doc = _json.loads(path.read_text())
+    assert doc["v"] == MANIFEST_VERSION
+    assert doc["hash_algorithm"] == HASH_ALGORITHM
+    assert doc["target"] == "triton"
+    assert doc["generator_version"] == "mlopt-kernel-lower/0.1.0dev"
+    assert doc["run_id"]
+    assert doc["manifest_dir"] == str(mdir)
+    assert doc["verify"]["level"] == "term-denotation"
+
+    # Changes are blob_ref wire form — no inline payload.
+    (ch,) = doc["changes"]
+    assert ch["op"] == "put"
+    assert ch["before_hash"] is None
+    assert "content_b64" not in ch
+    blob_ref = ch["blob_ref"]
+    assert blob_ref == f"{BLOB_DIRNAME}/{ch['hash']}"
+    assert ch["artifact"].endswith(".py")
+
+    # The blob exists, hashes to its name, and decodes to the payload.
+    blob = mdir / blob_ref
+    assert blob.is_file()
+    payload = blob.read_bytes()
+    assert blake3.blake3(payload).hexdigest() == ch["hash"]
+    assert payload == b"print('triton')\n"
+
+    # artifacts mirror the put changes, sorted by ref.
+    assert doc["artifacts"] == [
+        {"artifact": ch["artifact"], "hash": ch["hash"]}
+    ]
+
+
+def test_deliver_term_cuda(stub_bins, tmp_path) -> None:
+    import json as _json
+
+    from mlopt_kernel.lower import deliver_term
+
+    mdir = tmp_path / "d"
+    deliver_term(ELEMENTWISE_TERM, "cuda", mdir, bin_dir=stub_bins)
+    doc = _json.loads((mdir / "manifest.json").read_text())
+    (ch,) = doc["changes"]
+    assert ch["artifact"].endswith(".cu")
+    assert (mdir / ch["blob_ref"]).read_bytes() == b"// cuda\n"
+
+
+def test_deliver_candidate(stub_bins, tmp_path) -> None:
+    from mlopt_kernel.lower import deliver_candidate
+
+    cand = SimpleNamespace(term=QGEMV_TERM, label="qgemv-2")
+    path = deliver_candidate(
+        cand, "triton", tmp_path / "d", bin_dir=stub_bins
+    )
+    assert path.name == "manifest.json"
+    assert path.is_file()
+
+
+def test_deliver_term_rejects_non_term(tmp_path) -> None:
+    from mlopt_kernel.lower import deliver_term
+
+    with pytest.raises(LowerError, match=r"lib_kernel_ir\.Term"):
+        deliver_term(object(), "triton", tmp_path)  # type: ignore[arg-type]
+
+
+def test_deliver_refusal_propagates(tmp_path) -> None:
+    """A refusing emitter means no manifest dir is left behind."""
+    from mlopt_kernel.lower import deliver_term
+
+    _write_stub(
+        tmp_path,
+        "compile-triton",
+        "cat >/dev/null\necho 'refused: bogus' >&2\nexit 3",
+    )
+    _write_stub(tmp_path, "compile-cuda", "cat >/dev/null\ntrue")
+    mdir = tmp_path / "out"
+    with pytest.raises(LowerError, match="refused: bogus"):
+        deliver_term(ELEMENTWISE_TERM, "triton", mdir, bin_dir=tmp_path)
+    assert not (mdir / "manifest.json").exists()

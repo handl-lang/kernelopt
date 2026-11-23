@@ -21,6 +21,8 @@ from mlopt_kernel.laws import (
 )
 from mlopt_kernel.lower import (
     LowerError,
+    deliver_candidate,
+    deliver_term,
     lower_candidate,
     lower_term,
     verify_lowered,
@@ -44,6 +46,8 @@ __all__ = [
     "KernelState",
     "KernelVerifyReport",
     "LowerError",
+    "deliver_candidate",
+    "deliver_term",
     "kernel_cost",
     "lower_candidate",
     "lower_term",
