@@ -5,7 +5,7 @@ kept deliberately thin: the *search* stays lowering-agnostic
 (``search.py``'s gate → bound → measure never sees a backend), and
 lowering is an opt-in post-search step.  ``compile-triton`` and
 ``compile-cuda`` already exist as stdin-Term-JSON → stdout-source
-binaries in the sibling ``engine-compile-*`` checkouts; this module is
+binaries in the sibling ``tool-compile-*`` checkouts; this module is
 the subprocess bridge plus the manifest emission, mirroring the
 ``source-onnx`` resolution pattern in mlopt-product's
 ``adapters/onnx_rust.py``.
@@ -25,15 +25,15 @@ Honest bounds, stated up front:
   ``verify_lowered`` for the split.
 * **The manifest is a mirror, not an import.**  ``mlopt.manifest`` does
   not exist yet (parallel work in mlopt-product); the dicts emitted
-  here follow the ``engine-codegen`` wire schema (``Change`` Put /
+  here follow the ``tool-codegen`` wire schema (``Change`` Put /
   ``Manifest`` entry) by construction — ``{"op": "put", "artifact",
   "content_b64", "hash"}`` for changes and ``{"artifact", "hash"}``
   for manifest entries — so a future Rust ``codegen apply --manifest``
   consumes them unchanged.  ``hash`` is BLAKE3-256 hex, matching
-  ``engine-codegen``'s ``ContentHash``.
+  ``tool-codegen``'s ``ContentHash``.
 * **CUDA host shim is inline.**  ``compile-cuda`` emits the
   ``cuda_emit_host`` helper namespace *inside* the same translation
-  unit (``engine-compile-cuda/src/codegen.rs`` / ``contract.rs``), so
+  unit (``tool-compile-cuda/src/codegen.rs`` / ``contract.rs``), so
   the ``.cu`` artifact is self-contained — no companion host artifact
   is needed.  Documented here so the gap is a decision, not an
   omission.
@@ -94,13 +94,13 @@ _TARGETS: dict[str, dict[str, str]] = {
     "triton": {
         "bin": "compile-triton",
         "ext": "py",
-        "repo": "engine-compile-triton",
+        "repo": "tool-compile-triton",
         "env": "COMPILE_TRITON_BIN",
     },
     "cuda": {
         "bin": "compile-cuda",
         "ext": "cu",
-        "repo": "engine-compile-cuda",
+        "repo": "tool-compile-cuda",
         "env": "COMPILE_CUDA_BIN",
     },
 }
@@ -116,7 +116,7 @@ class LowerError(RuntimeError):
 
 
 def _blake3_hex(data: bytes) -> str:
-    """BLAKE3-256 hex — ``engine-codegen``'s ``ContentHash`` format."""
+    """BLAKE3-256 hex — ``tool-codegen``'s ``ContentHash`` format."""
     return blake3.blake3(data).hexdigest()
 
 
@@ -131,7 +131,7 @@ def _target_spec(target: str) -> dict[str, str]:
 
 
 def _emitter_repo(target: str) -> Path | None:
-    """Return the sibling ``engine-compile-*`` checkout, if present."""
+    """Return the sibling ``tool-compile-*`` checkout, if present."""
     spec = _target_spec(target)
     sibling = _KERNELOPT_ROOT.parent / spec["repo"]
     return sibling if sibling.is_dir() else None
@@ -277,7 +277,7 @@ def lower_term(
          "content_b64": "<base64 source>",
          "hash": "<blake3-256 hex of the source bytes>"}
 
-    The schema mirrors ``engine-codegen``'s ``ChangeRepr``/``Manifest``
+    The schema mirrors ``tool-codegen``'s ``ChangeRepr``/``Manifest``
     wire form (``manifest.py`` in mlopt-product is being built in
     parallel against the same schema — deliberately *not* imported
     here; the coupling is the JSON shape, not the package).
@@ -321,7 +321,7 @@ def lower_candidate(
 ) -> dict[str, Any]:
     """Lower a searched :class:`~mlopt_kernel.search.Candidate`'s term.
 
-    Returns a manifest dict in the ``engine-codegen`` ``Manifest``
+    Returns a manifest dict in the ``tool-codegen`` ``Manifest``
     shape::
 
         {"target": "triton",
