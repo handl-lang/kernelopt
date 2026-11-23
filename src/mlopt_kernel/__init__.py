@@ -19,6 +19,12 @@ from mlopt_kernel.laws import (
     KERNEL_RULES,
     SCHEDULED_KERNEL_OPS,
 )
+from mlopt_kernel.lower import (
+    LowerError,
+    lower_candidate,
+    lower_term,
+    verify_lowered,
+)
 from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES
 from mlopt_kernel.sink import (
     KernelExecutor,
@@ -37,5 +43,9 @@ __all__ = [
     "KernelSink",
     "KernelState",
     "KernelVerifyReport",
+    "LowerError",
     "kernel_cost",
+    "lower_candidate",
+    "lower_term",
+    "verify_lowered",
 ]

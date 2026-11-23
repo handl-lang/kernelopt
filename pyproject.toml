@@ -23,6 +23,7 @@ dependencies = [
     "benchkit",
     "lib-kernel-ir",
     "torch>=2.0",
+    "blake3>=1.0.11",
 ]
 
 [project.optional-dependencies]
