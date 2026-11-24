@@ -19,9 +19,9 @@ import torch
 # collection.
 lib_kernel_ir = pytest.importorskip("lib_kernel_ir")
 
-from lib_kernel_ir import Cost, qgemv  # noqa: E402
+from lib_kernel_ir import Cost, qgemv
 
-from mlopt_kernel.search import (  # noqa: E402
+from mlopt_kernel.search import (
     Candidate,
     Rejected,
     SearchResult,

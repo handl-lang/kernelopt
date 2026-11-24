@@ -26,11 +26,11 @@ import torch
 
 lib_kernel_ir = pytest.importorskip("lib_kernel_ir")
 
-import blake3  # noqa: E402
-from lib_kernel_ir import Leaf, Term, qgemv  # noqa: E402
+import blake3
+from lib_kernel_ir import Leaf, Term, qgemv
 
-from mlopt_kernel import lower as lower_mod  # noqa: E402
-from mlopt_kernel.lower import (  # noqa: E402
+from mlopt_kernel import lower as lower_mod
+from mlopt_kernel.lower import (
     LowerError,
     lower_candidate,
     lower_term,

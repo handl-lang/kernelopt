@@ -70,6 +70,7 @@ class _ChunkedRetention(nn.Module):
 def _saturate(t: int, k: int, iters: int, budget: int, chunk: int):
     """``wholemodel_gap_probe._saturate``, vendored verbatim."""
     from kit_carriers.om import OM_CHUNKIFY, OM_LAWS, om_kway_laws
+    from kit_torch.adapters import TorchSource
     from mlopt_core.cost import dag_cost, flops_cost
     from mlopt_core.egraph import EGraph
     from mlopt_core.laws.tensor import (
@@ -81,7 +82,6 @@ def _saturate(t: int, k: int, iters: int, budget: int, chunk: int):
         MUL_DIV_SWAP,
         SPLIT_SCALAR_RULES,
     )
-    from kit_torch.adapters import TorchSource
 
     bridges = [
         MUL_DIV_SWAP,
@@ -313,9 +313,9 @@ def main() -> None:
     """Run per-op verify + the retnet end-to-end arm table."""
     import copy
 
+    from kit_torch.adapters import TorchSink
     from mlopt_core.ir import IR
     from mlopt_orchestrator.optimize import _lower_extracted
-    from kit_torch.adapters import TorchSink
 
     from mlopt_kernel import KernelSink, kernel_cost
 

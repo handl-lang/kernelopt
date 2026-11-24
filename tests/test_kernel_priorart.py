@@ -18,12 +18,12 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
+from kit_discovery.verifier import verify_law
 from mlopt_core.egraph import Rewrite
 from mlopt_core.ir import Const, Op, TensorType, Var
 from mlopt_core.laws import tags
 from mlopt_core.laws.serialize import alpha_key
 from mlopt_core.meta import instantiate_pattern
-from kit_discovery.verifier import verify_law
 
 from mlopt_kernel import KERNEL_RULES
 from mlopt_kernel.priorart import KERNEL_PRIOR_ART_RULES
@@ -81,8 +81,8 @@ class TestSiblingPosture:
             SCHEDULED_KERNEL_OPS,
         )
 
-        assert FUSED_KERNEL_OPS <= bridged
-        assert SCHEDULED_KERNEL_OPS <= bridged
+        assert bridged >= FUSED_KERNEL_OPS
+        assert bridged >= SCHEDULED_KERNEL_OPS
 
 
 class TestCertSpots:

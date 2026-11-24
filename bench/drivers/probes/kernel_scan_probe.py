@@ -32,16 +32,14 @@ from __future__ import annotations
 
 import os
 import sys
-import time
 from typing import cast
 
 import torch
 import torch.nn as nn
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from kernel_vocab_probe import (  # noqa: E402
+from kernel_vocab_probe import (
     _capture_manual,
-    _ChunkedRetention,
     _ops_of,
     _saturate,
     _time_module,
@@ -77,9 +75,9 @@ def main() -> None:
     """Run the fold + verify + the retnet end-to-end arm table."""
     import copy
 
+    from kit_torch.adapters import TorchSink
     from mlopt_core.ir import IR
     from mlopt_orchestrator.optimize import _lower_extracted
-    from kit_torch.adapters import TorchSink
 
     from mlopt_kernel import KernelSink, kernel_cost
 
@@ -97,7 +95,7 @@ def main() -> None:
         f"  kernel_cost(spelled extract) = {kernel_cost(sat['best']):.0f}"
     )
 
-    eg, root, sched, added = _fold_scan(sat["best"])
+    _eg, _root, sched, added = _fold_scan(sat["best"])
     print(
         f"scan fold: +{added} enodes -> root={sched.op} "
         f"kernel_cost={kernel_cost(sched):.0f}"

@@ -20,6 +20,7 @@ PYPROJECT = ROOT / "pyproject.toml"
 
 
 def tool(name: str) -> str | None:
+    """Resolve a dev-tool binary: ``.venv/bin`` first, then ``PATH``."""
     candidate = VENV_BIN / name
     if candidate.exists():
         return str(candidate)
@@ -27,11 +28,13 @@ def tool(name: str) -> str | None:
 
 
 def src_dirs() -> list[str]:
+    """Lint roots — ``src``/``packages`` when present, else the repo root."""
     dirs = [d for d in ("src", "packages") if (ROOT / d).is_dir()]
     return dirs or ["."]
 
 
 def main() -> int:
+    """Run the gate steps; return nonzero if any step failed."""
     coverage = "--coverage" in sys.argv
     pyproject = PYPROJECT.read_text() if PYPROJECT.is_file() else ""
     steps: list[tuple[str, list[str]]] = []
@@ -40,23 +43,46 @@ def main() -> int:
         pytest = tool("pytest") or tool("python")
         if pytest:
             if coverage and tool("coverage"):
-                steps.append(("coverage", [tool("coverage"), "run", "-m", "pytest", "tests/", "-q"]))
-                steps.append(("coverage-report", [tool("coverage"), "report", "-m"]))
+                steps.append(
+                    (
+                        "coverage",
+                        [
+                            tool("coverage"),
+                            "run",
+                            "-m",
+                            "pytest",
+                            "tests/",
+                            "-q",
+                        ],
+                    )
+                )
+                steps.append(
+                    (
+                        "coverage-report",
+                        [tool("coverage"), "report", "-m"],
+                    )
+                )
             else:
-                steps.append(("pytest", [pytest, "-m", "pytest", "tests/", "-q"]))
+                steps.append(
+                    ("pytest", [pytest, "-m", "pytest", "tests/", "-q"])
+                )
 
     ruff = tool("ruff")
     if ruff:
         for d in src_dirs():
             steps.append((f"ruff check {d}", [ruff, "check", d]))
-            steps.append((f"ruff format {d}", [ruff, "format", "--check", d]))
+            steps.append(
+                (f"ruff format {d}", [ruff, "format", "--check", d])
+            )
 
     ty = tool("ty")
     if ty:
         steps.append(("ty", [ty, "check"]))
 
     lint_imports = tool("lint-imports")
-    if lint_imports and ("importlinter" in pyproject or "import-linter" in pyproject):
+    if lint_imports and (
+        "importlinter" in pyproject or "import-linter" in pyproject
+    ):
         steps.append(("lint-imports", [lint_imports]))
 
     failed = []

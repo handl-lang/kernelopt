@@ -724,7 +724,7 @@ class TestChunkScan:
     def test_verify_scheduled_and_eager(self):
         """Scheduled and spelled-cat paths both verify vs the site."""
         torch.manual_seed(0)
-        t, vs = _scan_term(2)
+        t, _vs = _scan_term(2)
         eg = EGraph()
         root = eg.add_term(t)
         eg.apply_rule(_rule("kern_fuse_chunk_scan"), root)

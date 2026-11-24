@@ -38,10 +38,10 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
+from kit_discovery.proposal import Candidate
 from mlopt_core.ir import Const, Op
 from mlopt_core.laws import R
 from mlopt_core.laws.serialize import alpha_key
-from kit_discovery.proposal import Candidate
 
 from bench.drivers import overnight as on
 from bench.drivers.screen import novelty_sieve as ns

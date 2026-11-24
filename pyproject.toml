@@ -99,7 +99,10 @@ ignore = [
 ]
 
 # The docstring gate applies to shipped code only: tests and bench are
-# example/measurement code, not a public API surface.
+# example/measurement code, not a public API surface.  E402 in tests is
+# the `pytest.importorskip("torch")` guard pattern — imports must follow
+# it.  RUF001/2/3 are relaxed in tests/bench where math notation (σ, ×,
+# –, −) appears deliberately in docstrings/comments/strings.
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]
-"bench/**" = ["D"]
+"tests/**" = ["D", "E402", "RUF002", "RUF003"]
+"bench/**" = ["D", "RUF001", "RUF002", "RUF003"]

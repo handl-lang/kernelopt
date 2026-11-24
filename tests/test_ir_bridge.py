@@ -13,10 +13,10 @@ import torch
 
 lib_kernel_ir = pytest.importorskip("lib_kernel_ir")
 
-from lib_kernel_ir import Leaf, Term, from_json, to_json  # noqa: E402
-from mlopt_core.ir import Const, Op, Param, TensorType, Var  # noqa: E402
+from lib_kernel_ir import Leaf, Term, from_json, to_json
+from mlopt_core.ir import Const, Op, Param, TensorType, Var
 
-from mlopt_kernel.ir_bridge import UnsupportedOp, translate  # noqa: E402
+from mlopt_kernel.ir_bridge import UnsupportedOp, translate
 
 K, N = 8, 16
 V = Var("v", TensorType((K,)))
