@@ -2,12 +2,12 @@
 
 Two layers of tests:
 
-* **Stub-emitter tests** (always run): a fake ``compile-triton`` /
-  ``compile-cuda`` shell script on ``bin_dir`` exercises the subprocess
+* **Stub-emitter tests** (always run): a fake ``tool-compile-triton`` /
+  ``tool-compile-cuda`` shell script on ``bin_dir`` exercises the subprocess
   bridge, the Change-dict shape, refusal propagation, and the manifest
   — no cargo, no GPU.
 * **Real-emitter tests** (skip-if-binary-missing): when a built
-  ``compile-triton``/``compile-cuda`` resolves without building
+  ``tool-compile-triton``/``tool-compile-cuda`` resolves without building
   (``_find_binary`` — explicit env/dir/built checkout only, never a
   cargo build inside the test run), fixture terms go through the real
   binaries.  Mirrors the honest-skip convention: a missing binary is a
@@ -52,18 +52,18 @@ def _write_stub(bin_dir, name: str, body: str) -> None:
 
 @pytest.fixture
 def stub_bins(tmp_path, monkeypatch):
-    """A bin_dir with stub ``compile-triton``/``compile-cuda`` binaries.
+    """A bin_dir with stub ``tool-compile-triton``/``tool-compile-cuda`` binaries.
 
-    Stubs consume stdin and emit a fixed source line; ``compile-cuda``
+    Stubs consume stdin and emit a fixed source line; ``tool-compile-cuda``
      is swapped per-test when a refusal is needed.
     """
     _write_stub(
         tmp_path,
-        "compile-triton",
+        "tool-compile-triton",
         "cat >/dev/null\necho \"print('triton')\"",
     )
     _write_stub(
-        tmp_path, "compile-cuda", "cat >/dev/null\necho '// cuda'"
+        tmp_path, "tool-compile-cuda", "cat >/dev/null\necho '// cuda'"
     )
     return tmp_path
 
@@ -118,7 +118,7 @@ def test_lower_term_out_dir_writes_file(stub_bins, tmp_path) -> None:
 def test_lower_term_refusal_propagates_verbatim(tmp_path) -> None:
     _write_stub(
         tmp_path,
-        "compile-triton",
+        "tool-compile-triton",
         "cat >/dev/null\necho 'not a lowerable term: bogus op' >&2\nexit 3",
     )
     with pytest.raises(
@@ -134,9 +134,9 @@ def test_lower_term_unknown_target() -> None:
 
 def test_lower_term_missing_binary_names_remedies(monkeypatch) -> None:
     monkeypatch.setenv(
-        "COMPILE_TRITON_BIN", "/nonexistent/compile-triton"
+        "TOOL_COMPILE_TRITON_BIN", "/nonexistent/tool-compile-triton"
     )
-    with pytest.raises(LowerError, match="COMPILE_TRITON_BIN"):
+    with pytest.raises(LowerError, match="TOOL_COMPILE_TRITON_BIN"):
         lower_term(ELEMENTWISE_TERM, "triton")
 
 
@@ -196,8 +196,8 @@ def test_verify_lowered_rejects_non_term() -> None:
 def _real_binary(target: str):
     """A built emitter binary, or None — never triggers a cargo build."""
     spec_env = {
-        "triton": "COMPILE_TRITON_BIN",
-        "cuda": "COMPILE_CUDA_BIN",
+        "triton": "TOOL_COMPILE_TRITON_BIN",
+        "cuda": "TOOL_COMPILE_CUDA_BIN",
     }
     saved = os.environ.get(spec_env[target])
     try:
@@ -345,10 +345,10 @@ def test_deliver_refusal_propagates(tmp_path) -> None:
 
     _write_stub(
         tmp_path,
-        "compile-triton",
+        "tool-compile-triton",
         "cat >/dev/null\necho 'refused: bogus' >&2\nexit 3",
     )
-    _write_stub(tmp_path, "compile-cuda", "cat >/dev/null\ntrue")
+    _write_stub(tmp_path, "tool-compile-cuda", "cat >/dev/null\ntrue")
     mdir = tmp_path / "out"
     with pytest.raises(LowerError, match="refused: bogus"):
         deliver_term(ELEMENTWISE_TERM, "triton", mdir, bin_dir=tmp_path)

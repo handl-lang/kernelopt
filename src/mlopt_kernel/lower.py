@@ -3,8 +3,8 @@
 This is the ``Emitter<KernelTerm>`` analogue from plan PL-0004 Phase 3,
 kept deliberately thin: the *search* stays lowering-agnostic
 (``search.py``'s gate → bound → measure never sees a backend), and
-lowering is an opt-in post-search step.  ``compile-triton`` and
-``compile-cuda`` already exist as stdin-Term-JSON → stdout-source
+lowering is an opt-in post-search step.  ``tool-compile-triton`` and
+``tool-compile-cuda`` already exist as stdin-Term-JSON → stdout-source
 binaries in the sibling ``tool-compile-*`` checkouts; this module is
 the subprocess bridge plus the manifest emission, mirroring the
 ``source-onnx`` resolution pattern in mlopt-product's
@@ -31,7 +31,7 @@ Honest bounds, stated up front:
   for manifest entries — so a future Rust ``codegen apply --manifest``
   consumes them unchanged.  ``hash`` is BLAKE3-256 hex, matching
   ``tool-codegen``'s ``ContentHash``.
-* **CUDA host shim is inline.**  ``compile-cuda`` emits the
+* **CUDA host shim is inline.**  ``tool-compile-cuda`` emits the
   ``cuda_emit_host`` helper namespace *inside* the same translation
   unit (``tool-compile-cuda/src/codegen.rs`` / ``contract.rs``), so
   the ``.cu`` artifact is self-contained — no companion host artifact
@@ -92,16 +92,16 @@ _LOWER_TIMEOUT_S = 900
 #: cargo package that builds it in the sibling checkout.
 _TARGETS: dict[str, dict[str, str]] = {
     "triton": {
-        "bin": "compile-triton",
+        "bin": "tool-compile-triton",
         "ext": "py",
         "repo": "tool-compile-triton",
-        "env": "COMPILE_TRITON_BIN",
+        "env": "TOOL_COMPILE_TRITON_BIN",
     },
     "cuda": {
-        "bin": "compile-cuda",
+        "bin": "tool-compile-cuda",
         "ext": "cu",
         "repo": "tool-compile-cuda",
-        "env": "COMPILE_CUDA_BIN",
+        "env": "TOOL_COMPILE_CUDA_BIN",
     },
 }
 
@@ -164,8 +164,8 @@ def _bin_candidates(target: str, bin_dir: Path | None) -> list[Path]:
 def _find_binary(target: str, bin_dir: Path | None) -> Path | None:
     """Resolve the emitter binary without building.
 
-    An explicit per-target env var (``COMPILE_TRITON_BIN`` /
-    ``COMPILE_CUDA_BIN``) that does not name an executable resolves to
+    An explicit per-target env var (``TOOL_COMPILE_TRITON_BIN`` /
+    ``TOOL_COMPILE_CUDA_BIN``) that does not name an executable resolves to
     ``None``; :func:`_ensure_binary` turns that into a named error
     rather than silently probing other locations.
     """
@@ -234,8 +234,8 @@ def _emit(term: Term, target: str, binary: Path) -> str:
     """Run the emitter: Term-JSON on stdin, source on stdout."""
     raw = to_json(term)
     cmd = [str(binary)]
-    # compile-triton accepts --block-n/--block-k (defaults 64/128 —
-    # what the emitter itself uses); compile-cuda takes no flags.  v1
+    # tool-compile-triton accepts --block-n/--block-k (defaults 64/128 —
+    # what the emitter itself uses); tool-compile-cuda takes no flags.  v1
     # passes nothing: tuning belongs to a later flag surface.
     try:
         proc = subprocess.run(

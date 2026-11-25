@@ -26,7 +26,7 @@ The order is not negotiable (ADR-0165 rules 4-6):
     result.routing_row()  # {"operator": ..., "term": ..., "us": ...}
 
 `Candidate`s are injected, so the driver is testable without a GPU and the
-lowering (`compile-triton`) is free to arrive later: whatever can produce
+lowering (`tool-compile-triton`) is free to arrive later: whatever can produce
 a callable and a Term can be searched.
 """
 
