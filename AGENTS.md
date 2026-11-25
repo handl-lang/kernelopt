@@ -54,7 +54,7 @@ per-package subdirectories: `mlopt-core` and
 `mlopt-orchestrator` (`handl-lang/eqsat`), `kit-torch`,
 `kit-carriers` (the `probes` dep-group only — the vocab probe
 lifts the retnet carrier through `kit_carriers.om`),
-`kit-discovery` (`handl-lang/graphopt`), `gamekit` and `benchkit`
+`kit-discovery` (`handl-lang/kit-discovery`), `gamekit` and `benchkit`
 (`handl-lang/gamekit` `packages/`), and `lib-kernel-ir`
 (`handl-lang/lib-kernel-ir` — `mlopt_kernel.search` reads its
 `Term`/`Cost` IR; tests put `../lib-kernel-ir/src` on `pythonpath`

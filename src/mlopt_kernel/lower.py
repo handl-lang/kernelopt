@@ -7,7 +7,7 @@ lowering is an opt-in post-search step.  ``tool-compile-triton`` and
 ``tool-compile-cuda`` already exist as stdin-Term-JSON → stdout-source
 binaries in the sibling ``tool-compile-*`` checkouts; this module is
 the subprocess bridge plus the manifest emission, mirroring the
-``source-onnx`` resolution pattern in mlopt-product's
+``source-onnx`` resolution pattern in kit-product's
 ``adapters/onnx_rust.py``.
 
 Honest bounds, stated up front:
@@ -24,7 +24,7 @@ Honest bounds, stated up front:
   it cannot execute the emitted source.  See the module docstring of
   ``verify_lowered`` for the split.
 * **The manifest is a mirror, not an import.**  ``mlopt.manifest`` does
-  not exist yet (parallel work in mlopt-product); the dicts emitted
+  not exist yet (parallel work in kit-product); the dicts emitted
   here follow the ``tool-codegen`` wire schema (``Change`` Put /
   ``Manifest`` entry) by construction — ``{"op": "put", "artifact",
   "content_b64", "hash"}`` for changes and ``{"artifact", "hash"}``
@@ -75,7 +75,7 @@ GENERATOR_NAME = "mlopt-kernel-lower"
 GENERATOR_VERSION = "0.1.0dev"
 
 #: Change-set manifest wire constants — identical to
-#: ``mlopt.manifest`` (mlopt-product) and the ``kit_mlopt::manifest``
+#: ``mlopt.manifest`` (kit-product) and the ``kit_mlopt::manifest``
 #: apply shim in kit-prelude: ``manifest.json`` + a content-addressed
 #: ``blobs/<hash>`` store, ``hash_algorithm`` stamped per manifest.
 MANIFEST_VERSION = 1
@@ -278,7 +278,7 @@ def lower_term(
          "hash": "<blake3-256 hex of the source bytes>"}
 
     The schema mirrors ``tool-codegen``'s ``ChangeRepr``/``Manifest``
-    wire form (``manifest.py`` in mlopt-product is being built in
+    wire form (``manifest.py`` in kit-product is being built in
     parallel against the same schema — deliberately *not* imported
     here; the coupling is the JSON shape, not the package).
 
@@ -423,7 +423,7 @@ def verify_lowered(term: Term, env: dict[str, Any]) -> Any:
 # ``content_b64`` changes — self-contained JSON). ``deliver_*`` writes
 # the on-disk form the apply shim consumes: ``<dir>/manifest.json`` +
 # ``<dir>/blobs/<blake3-hex>`` payloads, changes carrying ``blob_ref``
-# — the same wire ``mlopt.manifest.write_manifest`` (mlopt-product)
+# — the same wire ``mlopt.manifest.write_manifest`` (kit-product)
 # and ``kit_mlopt::manifest::apply_manifest`` (kit-prelude) speak.
 # Hash algorithm is BLAKE3-256, identical to the kernel's
 # ``ContentHash::of`` — declared hashes compare directly against what
