@@ -33,6 +33,17 @@ def src_dirs() -> list[str]:
     return dirs or ["."]
 
 
+def pytest_cmd() -> list[str] | None:
+    """Pytest invocation: the ``pytest`` binary, else ``python -m pytest``."""
+    binary = tool("pytest")
+    if binary:
+        return [binary]
+    python = tool("python")
+    if python:
+        return [python, "-m", "pytest"]
+    return None
+
+
 def main() -> int:
     """Run the gate steps; return nonzero if any step failed."""
     coverage = "--coverage" in sys.argv
@@ -40,7 +51,7 @@ def main() -> int:
     steps: list[tuple[str, list[str]]] = []
 
     if (ROOT / "tests").is_dir():
-        pytest = tool("pytest") or tool("python")
+        pytest = pytest_cmd()
         if pytest:
             if coverage and tool("coverage"):
                 steps.append(
@@ -64,7 +75,7 @@ def main() -> int:
                 )
             else:
                 steps.append(
-                    ("pytest", [pytest, "-m", "pytest", "tests/", "-q"])
+                    ("pytest", [*pytest, "tests/", "-q"])
                 )
 
     ruff = tool("ruff")
